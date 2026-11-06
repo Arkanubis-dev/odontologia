@@ -374,10 +374,10 @@ function PortalContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#FBF8F1] flex items-center justify-center">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm font-semibold text-slate-600">Cargando tu espacio terapéutico...</p>
+          <div className="w-12 h-12 border-4 border-[#468189] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-sm font-semibold text-[#031926]">Cargando tu espacio terapéutico...</p>
         </div>
       </div>
     );
@@ -392,20 +392,20 @@ function PortalContent() {
   ];
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-800">
+    <div className="min-h-screen bg-[#FBF8F1] text-[#031926] font-sans selection:bg-[#9DBEBB]/40 selection:text-[#031926]">
       {/* Top Bar */}
-      <header className="border-b border-slate-200 bg-white sticky top-0 z-30 shadow-sm">
+      <header className="border-b border-[#9DBEBB]/30 bg-white/95 backdrop-blur-md sticky top-0 z-30 shadow-xs">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Link href="/" className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-600 flex items-center justify-center text-white shadow-sm">
+            <Link href="/" className="flex items-center gap-2.5">
+              <div className="w-9 h-9 rounded-xl bg-[#468189] flex items-center justify-center text-white shadow-sm shadow-[#468189]/20">
                 <Brain className="w-5 h-5" />
               </div>
               <div>
-                <h1 className="text-sm font-bold text-slate-900 leading-tight">
-                  Centro de Psicología
+                <h1 className="text-sm font-bold text-[#031926] leading-tight">
+                  Alejandra Bedoya
                 </h1>
-                <p className="text-[10px] text-slate-500 font-medium">Mi Espacio Terapéutico</p>
+                <p className="text-[10px] text-[#468189] font-semibold">Psicología Laboral & Terapéutica</p>
               </div>
             </Link>
           </div>
@@ -413,25 +413,25 @@ function PortalContent() {
           {/* User info and Logout */}
           <div className="flex items-center gap-4">
             {isDemo && (
-              <span className="hidden sm:inline-block px-2.5 py-0.5 bg-amber-100 text-amber-800 text-xs font-semibold rounded-full border border-amber-200">
+              <span className="hidden sm:inline-block px-2.5 py-0.5 bg-[#F4E9CD] text-[#031926] text-xs font-semibold rounded-full border border-[#9DBEBB]/40">
                 Modo Demostración
               </span>
             )}
             <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-700 font-bold text-xs flex items-center justify-center border border-indigo-200">
+              <div className="w-8 h-8 rounded-full bg-[#9DBEBB]/30 text-[#031926] font-bold text-xs flex items-center justify-center border border-[#77ACA2]/50">
                 {user?.avatar ? (
                   <img src={user.avatar} alt="Avatar" className="w-full h-full rounded-full" />
                 ) : (
                   user?.nombre?.charAt(0).toUpperCase() || "P"
                 )}
               </div>
-              <span className="hidden md:inline text-xs font-semibold text-slate-700">
+              <span className="hidden md:inline text-xs font-semibold text-[#031926]">
                 {user?.nombre}
               </span>
             </div>
             <button
               onClick={handleCerrarSesion}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-600 hover:text-rose-600 hover:bg-rose-50 border border-slate-200 transition cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-[#031926]/70 hover:text-rose-600 hover:bg-rose-50 border border-[#9DBEBB]/40 transition cursor-pointer"
             >
               <LogOut className="w-3.5 h-3.5" />
               <span className="hidden sm:inline">Cerrar Sesión</span>
@@ -442,38 +442,38 @@ function PortalContent() {
 
       {/* Main Container */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Card */}
-        <div className="bg-gradient-to-r from-indigo-900 to-violet-900 rounded-3xl p-6 sm:p-8 text-white shadow-lg mb-8">
+        {/* Welcome Card en Rich Black (#031926) */}
+        <div className="bg-[#031926] rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-[#031926]/10 mb-8 border border-[#468189]/30">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div>
-              <span className="inline-block px-3 py-1 bg-white/15 backdrop-blur-md rounded-full text-xs font-semibold uppercase tracking-wider mb-2 text-indigo-100 border border-white/10">
+              <span className="inline-block px-3 py-1 bg-[#468189]/40 backdrop-blur-md rounded-full text-xs font-semibold uppercase tracking-wider mb-2 text-[#9DBEBB] border border-[#77ACA2]/30">
                 Portal del Consultante
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                 Hola, {user?.nombre?.split(" ")[0]} 👋
               </h2>
-              <p className="text-indigo-200 text-xs sm:text-sm mt-1">
-                Este es tu espacio seguro para gestionar citas, tareas terapéuticas y reflexiones personales.
+              <p className="text-[#9DBEBB] text-xs sm:text-sm mt-1 max-w-xl">
+                Este es tu espacio privado para gestionar citas, tareas acordadas en sesión y calificaciones con Alejandra Bedoya.
               </p>
             </div>
             <button
               onClick={() => setMostrarModalCita(true)}
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-indigo-950 font-semibold text-xs sm:text-sm shadow hover:bg-indigo-50 transition cursor-pointer shrink-0"
+              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#F4E9CD] text-[#031926] font-extrabold text-xs sm:text-sm shadow-md hover:bg-white transition cursor-pointer shrink-0"
             >
-              <Plus className="w-4 h-4" />
+              <Plus className="w-4 h-4 text-[#468189]" />
               Solicitar Nueva Cita
             </button>
           </div>
         </div>
 
         {/* Tab Navigation */}
-        <div className="flex border-b border-slate-200 mb-6 gap-2 overflow-x-auto pb-1">
+        <div className="flex border-b border-[#9DBEBB]/30 mb-6 gap-2 overflow-x-auto pb-1">
           <button
             onClick={() => setActiveTab("citas")}
             className={`inline-flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
               activeTab === "citas"
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                ? "bg-[#468189] text-white shadow-sm"
+                : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/20"
             }`}
           >
             <Calendar className="w-4 h-4" />
@@ -484,8 +484,8 @@ function PortalContent() {
             onClick={() => setActiveTab("tareas")}
             className={`inline-flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
               activeTab === "tareas"
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                ? "bg-[#468189] text-white shadow-sm"
+                : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/20"
             }`}
           >
             <ClipboardList className="w-4 h-4" />
@@ -496,8 +496,8 @@ function PortalContent() {
             onClick={() => setActiveTab("animo")}
             className={`inline-flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
               activeTab === "animo"
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                ? "bg-[#468189] text-white shadow-sm"
+                : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/20"
             }`}
           >
             <Smile className="w-4 h-4" />
@@ -508,8 +508,8 @@ function PortalContent() {
             onClick={() => setActiveTab("perfil")}
             className={`inline-flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
               activeTab === "perfil"
-                ? "bg-indigo-600 text-white shadow-sm"
-                : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+                ? "bg-[#468189] text-white shadow-sm"
+                : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/20"
             }`}
           >
             <User className="w-4 h-4" />
@@ -521,15 +521,15 @@ function PortalContent() {
         {activeTab === "citas" && (
           <div className="space-y-4">
             {citas.length === 0 ? (
-              <div className="bg-white rounded-2xl p-10 text-center border border-slate-200">
-                <Calendar className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-                <h3 className="text-base font-bold text-slate-800">No tienes citas agendadas</h3>
-                <p className="text-xs text-slate-500 mt-1 mb-4">
-                  Coordina tu próxima sesión terapéutica cuando lo desees.
+              <div className="bg-white rounded-2xl p-10 text-center border border-[#9DBEBB]/40">
+                <Calendar className="w-10 h-10 text-[#9DBEBB] mx-auto mb-3" />
+                <h3 className="text-base font-bold text-[#031926]">No tienes citas agendadas</h3>
+                <p className="text-xs text-[#031926]/70 mt-1 mb-4">
+                  Coordina tu próxima sesión terapéutica con Alejandra cuando lo desees.
                 </p>
                 <button
                   onClick={() => setMostrarModalCita(true)}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-indigo-600 text-white text-xs font-semibold hover:bg-indigo-700 transition"
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#468189] text-white text-xs font-semibold hover:bg-[#031926] transition cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   Solicitar Cita
@@ -553,31 +553,31 @@ function PortalContent() {
                   return (
                     <div
                       key={cita.id}
-                      className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition"
+                      className="bg-white rounded-2xl p-6 border border-[#9DBEBB]/40 shadow-xs hover:shadow-md transition"
                     >
                       <div className="flex items-start justify-between mb-4">
                         <div className="flex items-center gap-2">
                           <span
                             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
                               cita.modalidad === "virtual"
-                                ? "bg-indigo-50 text-indigo-700 border border-indigo-200"
-                                : "bg-teal-50 text-teal-700 border border-teal-200"
+                                ? "bg-[#9DBEBB]/25 text-[#031926] border border-[#77ACA2]/40"
+                                : "bg-[#F4E9CD] text-[#031926] border border-[#77ACA2]/40"
                             }`}
                           >
                             {cita.modalidad === "virtual" ? (
-                              <Video className="w-3.5 h-3.5" />
+                              <Video className="w-3.5 h-3.5 text-[#468189]" />
                             ) : (
-                              <MapPin className="w-3.5 h-3.5" />
+                              <MapPin className="w-3.5 h-3.5 text-[#468189]" />
                             )}
                             <span className="capitalize">{cita.modalidad}</span>
                           </span>
 
                           <span
-                            className={`px-2.5 py-1 rounded-full text-xs font-medium ${
+                            className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
                               cita.estado === "confirmada"
-                                ? "bg-emerald-50 text-emerald-700"
+                                ? "bg-[#77ACA2]/20 text-[#031926] border border-[#77ACA2]/40"
                                 : cita.estado === "pendiente"
-                                ? "bg-amber-50 text-amber-700"
+                                ? "bg-[#F4E9CD] text-[#031926] border border-[#9DBEBB]/40"
                                 : "bg-slate-100 text-slate-600"
                             }`}
                           >
@@ -586,16 +586,16 @@ function PortalContent() {
                         </div>
                       </div>
 
-                      <h4 className="text-base font-bold text-slate-900 capitalize mb-1">
+                      <h4 className="text-base font-bold text-[#031926] capitalize mb-1">
                         {fechaFormateada}
                       </h4>
-                      <p className="text-xs font-semibold text-indigo-600 flex items-center gap-1.5 mb-3">
+                      <p className="text-xs font-semibold text-[#468189] flex items-center gap-1.5 mb-3">
                         <Clock className="w-3.5 h-3.5" />
                         {horaFormateada}
                       </p>
 
                       {cita.notas_paciente && (
-                        <p className="text-xs text-slate-500 bg-slate-50 p-3 rounded-xl border border-slate-100 mb-4">
+                        <p className="text-xs text-[#031926]/75 bg-[#FBF8F1] p-3 rounded-xl border border-[#9DBEBB]/30 mb-4">
                           {cita.notas_paciente}
                         </p>
                       )}
@@ -605,7 +605,7 @@ function PortalContent() {
                           href={cita.enlace_reunion}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition mb-3"
+                          className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-[#468189] hover:bg-[#031926] text-white font-semibold text-xs transition mb-3"
                         >
                           <Video className="w-4 h-4" />
                           Unirse a la Sesión Virtual
@@ -615,33 +615,33 @@ function PortalContent() {
                       {/* Calificación: Solo si la especialista finalizó el servicio */}
                       {(cita.estado === "completada" || cita.estado === "finalizado") ? (
                         calificaciones[cita.id] ? (
-                          <div className="mt-4 p-3 rounded-2xl bg-amber-50/80 border border-amber-200/80 flex flex-col gap-1.5">
+                          <div className="mt-4 p-3.5 rounded-2xl bg-[#F4E9CD]/50 border border-[#9DBEBB]/40 flex flex-col gap-1.5">
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1 text-amber-400">
+                              <div className="flex items-center gap-1 text-amber-500">
                                 {[...Array(calificaciones[cita.id].estrellas)].map((_, i) => (
                                   <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
                                 ))}
-                                <span className="text-xs font-bold text-amber-900 ml-1">
+                                <span className="text-xs font-bold text-[#031926] ml-1">
                                   Calificación registrada
                                 </span>
                               </div>
-                              <span className="text-[10px] text-amber-700 font-semibold uppercase bg-amber-100/60 px-2 py-0.5 rounded-full">
+                              <span className="text-[10px] text-[#031926]/70 font-semibold uppercase bg-white/70 px-2 py-0.5 rounded-full border border-[#9DBEBB]/30">
                                 1 por servicio
                               </span>
                             </div>
                             {calificaciones[cita.id].comentario && (
-                              <p className="text-xs text-amber-800 italic mt-0.5">
+                              <p className="text-xs text-[#031926]/80 italic mt-0.5">
                                 "{calificaciones[cita.id].comentario}"
                               </p>
                             )}
                           </div>
                         ) : (
-                          <div className="mt-4 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between gap-3">
+                          <div className="mt-4 p-3.5 rounded-2xl bg-[#77ACA2]/15 border border-[#77ACA2]/40 flex items-center justify-between gap-3">
                             <div>
-                              <p className="text-xs font-bold text-emerald-900">
+                              <p className="text-xs font-bold text-[#031926]">
                                 Sesión Finalizada
                               </p>
-                              <p className="text-[11px] text-emerald-700">
+                              <p className="text-[11px] text-[#031926]/75">
                                 Califica el servicio prestado (1 a 5 estrellas)
                               </p>
                             </div>
@@ -651,7 +651,7 @@ function PortalContent() {
                                 setEstrellasCalificar(5);
                                 setComentarioCalificar("");
                               }}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs transition cursor-pointer shrink-0"
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#468189] hover:bg-[#031926] text-white font-semibold text-xs shadow-xs transition cursor-pointer shrink-0"
                             >
                               <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
                               <span>Calificar</span>
@@ -659,7 +659,7 @@ function PortalContent() {
                           </div>
                         )
                       ) : (
-                        <p className="text-[10px] text-slate-400 mt-3 italic flex items-center gap-1">
+                        <p className="text-[10px] text-[#031926]/50 mt-3 italic flex items-center gap-1">
                           <span>* Podrás calificar esta sesión una vez la psicóloga marque el servicio como finalizado.</span>
                         </p>
                       )}
@@ -674,11 +674,11 @@ function PortalContent() {
         {/* TAB 2: TAREAS TERAPÉUTICAS */}
         {activeTab === "tareas" && (
           <div className="space-y-4">
-            <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-4 flex items-start gap-3">
-              <Sparkles className="w-5 h-5 text-indigo-600 shrink-0 mt-0.5" />
+            <div className="bg-[#9DBEBB]/20 border border-[#77ACA2]/30 rounded-2xl p-4 flex items-start gap-3">
+              <Sparkles className="w-5 h-5 text-[#468189] shrink-0 mt-0.5" />
               <div>
-                <h4 className="text-xs font-bold text-indigo-900">Tu espacio de autogestión</h4>
-                <p className="text-xs text-indigo-700">
+                <h4 className="text-xs font-bold text-[#031926]">Tu espacio de autogestión</h4>
+                <p className="text-xs text-[#031926]/75">
                   Las tareas acordadas en sesión te ayudan a afianzar herramientas en tu vida cotidiana. Marca cada una cuando la concluyas.
                 </p>
               </div>
@@ -690,17 +690,17 @@ function PortalContent() {
                   key={tarea.id}
                   className={`bg-white rounded-2xl p-5 border transition ${
                     tarea.completada
-                      ? "border-emerald-200 bg-emerald-50/20"
-                      : "border-slate-200 hover:border-indigo-300"
+                      ? "border-[#77ACA2]/40 bg-[#77ACA2]/10"
+                      : "border-[#9DBEBB]/40 hover:border-[#468189]"
                   }`}
                 >
                   <div className="flex items-start gap-3.5">
                     <button
                       onClick={() => toggleTarea(tarea.id, tarea.completada)}
-                      className="mt-0.5 text-slate-400 hover:text-indigo-600 transition cursor-pointer"
+                      className="mt-0.5 text-[#031926]/40 hover:text-[#468189] transition cursor-pointer"
                     >
                       {tarea.completada ? (
-                        <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                        <CheckCircle2 className="w-6 h-6 text-[#468189]" />
                       ) : (
                         <Circle className="w-6 h-6" />
                       )}
@@ -710,25 +710,25 @@ function PortalContent() {
                         <h4
                           className={`text-sm font-bold ${
                             tarea.completada
-                              ? "line-through text-slate-400"
-                              : "text-slate-900"
+                              ? "line-through text-[#031926]/40"
+                              : "text-[#031926]"
                           }`}
                         >
                           {tarea.titulo}
                         </h4>
                         {tarea.fecha_limite && (
-                          <span className="text-[11px] font-medium text-slate-400 bg-slate-100 px-2 py-0.5 rounded-md">
+                          <span className="text-[11px] font-semibold text-[#031926]/70 bg-[#F4E9CD] px-2 py-0.5 rounded-md">
                             {tarea.fecha_limite}
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                      <p className="text-xs text-[#031926]/75 mt-1 leading-relaxed">
                         {tarea.descripcion}
                       </p>
 
                       {tarea.reflexion_paciente && (
-                        <div className="mt-3 p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs text-slate-600">
-                          <span className="font-semibold text-slate-700 block mb-0.5">
+                        <div className="mt-3 p-3 bg-[#FBF8F1] border border-[#9DBEBB]/30 rounded-xl text-xs text-[#031926]/80">
+                          <span className="font-bold text-[#031926] block mb-0.5">
                             Tu nota / reflexión:
                           </span>
                           "{tarea.reflexion_paciente}"
@@ -746,15 +746,15 @@ function PortalContent() {
         {activeTab === "animo" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Formulario nuevo registro */}
-            <div className="lg:col-span-1 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
-              <h3 className="text-sm font-bold text-slate-900 mb-1">¿Cómo te sientes hoy?</h3>
-              <p className="text-xs text-slate-500 mb-4">
-                Llevar registro de tus emociones facilita identificar patrones en tus sesiones.
+            <div className="lg:col-span-1 bg-white p-6 rounded-2xl border border-[#9DBEBB]/40 shadow-xs">
+              <h3 className="text-sm font-bold text-[#031926] mb-1">¿Cómo te sientes hoy?</h3>
+              <p className="text-xs text-[#031926]/70 mb-4">
+                Llevar registro de tus emociones facilita identificar patrones en tus sesiones con Alejandra.
               </p>
 
               <form onSubmit={handleGuardarAnimo} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-2">
+                  <label className="block text-xs font-semibold text-[#031926] mb-2">
                     Nivel de bienestar
                   </label>
                   <div className="grid grid-cols-5 gap-1.5">
@@ -768,12 +768,12 @@ function PortalContent() {
                         }}
                         className={`p-2.5 rounded-xl border text-center transition cursor-pointer ${
                           nuevoAnimo === c.nivel
-                            ? "bg-indigo-50 border-indigo-600 ring-2 ring-indigo-500"
-                            : "border-slate-200 hover:bg-slate-50"
+                            ? "bg-[#9DBEBB]/25 border-[#468189] ring-2 ring-[#468189]"
+                            : "border-[#9DBEBB]/40 hover:bg-[#FBF8F1]"
                         }`}
                       >
                         <span className="text-2xl block">{c.emoji}</span>
-                        <span className="text-[9px] font-medium text-slate-500 block mt-1 truncate">
+                        <span className="text-[9px] font-semibold text-[#031926]/70 block mt-1 truncate">
                           {c.etiqueta}
                         </span>
                       </button>
@@ -782,7 +782,7 @@ function PortalContent() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  <label className="block text-xs font-semibold text-[#031926] mb-1">
                     Pensamientos o notas del día
                   </label>
                   <textarea
@@ -790,13 +790,13 @@ function PortalContent() {
                     value={nuevaNotaAnimo}
                     onChange={(e) => setNuevaNotaAnimo(e.target.value)}
                     placeholder="¿Ocurrió algo significativo? ¿Alguna sensación que desees conversar en tu próxima sesión?"
-                    className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    className="w-full p-3 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
                   />
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow transition cursor-pointer"
+                  className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#468189] hover:bg-[#031926] text-white font-semibold text-xs shadow-md shadow-[#468189]/20 transition cursor-pointer"
                 >
                   <Send className="w-3.5 h-3.5" />
                   Guardar en mi Historial
@@ -806,9 +806,9 @@ function PortalContent() {
 
             {/* Historial de registros */}
             <div className="lg:col-span-2 space-y-3">
-              <h3 className="text-sm font-bold text-slate-900 mb-1">Historial Emocional Reciente</h3>
+              <h3 className="text-sm font-bold text-[#031926] mb-1">Historial Emocional Reciente</h3>
               {registrosEmocionales.length === 0 ? (
-                <div className="bg-white p-8 rounded-2xl border border-slate-200 text-center text-xs text-slate-400">
+                <div className="bg-white p-8 rounded-2xl border border-[#9DBEBB]/40 text-center text-xs text-[#031926]/50">
                   Aún no has registrado notas de ánimo. ¡Comienza hoy!
                 </div>
               ) : (
@@ -824,24 +824,24 @@ function PortalContent() {
                   return (
                     <div
                       key={reg.id}
-                      className="bg-white p-4 rounded-2xl border border-slate-200 flex items-start gap-4 shadow-sm"
+                      className="bg-white p-4 rounded-2xl border border-[#9DBEBB]/40 flex items-start gap-4 shadow-xs"
                     >
-                      <div className="w-12 h-12 rounded-xl bg-slate-50 border border-slate-100 flex items-center justify-center text-2xl shrink-0">
+                      <div className="w-12 h-12 rounded-xl bg-[#FBF8F1] border border-[#9DBEBB]/30 flex items-center justify-center text-2xl shrink-0">
                         {carita.emoji}
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs font-bold text-slate-800">
+                          <span className="text-xs font-bold text-[#031926]">
                             {reg.emocion_principal}
                           </span>
-                          <span className="text-[10px] text-slate-400 font-medium">{fecha}</span>
+                          <span className="text-[10px] text-[#031926]/50 font-medium">{fecha}</span>
                         </div>
                         {reg.notas ? (
-                          <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                          <p className="text-xs text-[#031926]/75 mt-1 leading-relaxed">
                             "{reg.notas}"
                           </p>
                         ) : (
-                          <span className="text-[11px] text-slate-400 italic">Sin comentarios</span>
+                          <span className="text-[11px] text-[#031926]/50 italic">Sin comentarios</span>
                         )}
                       </div>
                     </div>
@@ -854,38 +854,38 @@ function PortalContent() {
 
         {/* TAB 4: PERFIL */}
         {activeTab === "perfil" && (
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-slate-200 max-w-2xl shadow-sm">
-            <h3 className="text-base font-bold text-slate-900 mb-1">Información de Consultante</h3>
-            <p className="text-xs text-slate-500 mb-6">
-              Datos registrados para tu expediente clínico y contacto confidencial.
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#9DBEBB]/40 max-w-2xl shadow-xs">
+            <h3 className="text-base font-bold text-[#031926] mb-1">Información de Consultante</h3>
+            <p className="text-xs text-[#031926]/70 mb-6">
+              Datos registrados para tu expediente clínico y contacto confidencial con Alejandra Bedoya.
             </p>
 
             <div className="space-y-4 text-xs">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <span className="text-slate-400 block mb-1">Nombre Completo</span>
-                  <p className="font-semibold text-slate-800 p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                  <span className="text-[#031926]/60 block mb-1 font-medium">Nombre Completo</span>
+                  <p className="font-semibold text-[#031926] p-2.5 bg-[#FBF8F1] rounded-xl border border-[#9DBEBB]/30">
                     {user?.nombre}
                   </p>
                 </div>
                 <div>
-                  <span className="text-slate-400 block mb-1">Correo Electrónico</span>
-                  <p className="font-semibold text-slate-800 p-2.5 bg-slate-50 rounded-xl border border-slate-100">
+                  <span className="text-[#031926]/60 block mb-1 font-medium">Correo Electrónico</span>
+                  <p className="font-semibold text-[#031926] p-2.5 bg-[#FBF8F1] rounded-xl border border-[#9DBEBB]/30">
                     {user?.email}
                   </p>
                 </div>
               </div>
 
               <div>
-                <span className="text-slate-400 block mb-1">Rol en el sistema</span>
-                <span className="inline-block px-3 py-1 bg-emerald-50 text-emerald-700 font-semibold rounded-full border border-emerald-200">
+                <span className="text-[#031926]/60 block mb-1 font-medium">Rol en el sistema</span>
+                <span className="inline-block px-3 py-1 bg-[#77ACA2]/20 text-[#031926] font-semibold rounded-full border border-[#77ACA2]/40">
                   Paciente / Consultante Activo
                 </span>
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-slate-100 flex items-center gap-3 text-xs text-slate-500">
-              <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+            <div className="mt-8 pt-6 border-t border-[#9DBEBB]/20 flex items-center gap-3 text-xs text-[#031926]/70">
+              <ShieldCheck className="w-5 h-5 text-[#468189] shrink-0" />
               <span>Tu información se almacena con cifrado y estrictos protocolos de confidencialidad médica.</span>
             </div>
           </div>
@@ -894,16 +894,16 @@ function PortalContent() {
 
       {/* Modal: Solicitar Cita */}
       {mostrarModalCita && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200">
-            <h3 className="text-lg font-bold text-slate-900 mb-1">Agendar Sesión Terapéutica</h3>
-            <p className="text-xs text-slate-500 mb-4">
+        <div className="fixed inset-0 z-50 bg-[#031926]/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-[#9DBEBB]/40">
+            <h3 className="text-lg font-bold text-[#031926] mb-1">Agendar Sesión con Alejandra</h3>
+            <p className="text-xs text-[#031926]/70 mb-4">
               Selecciona fecha, hora y modalidad de tu preferencia.
             </p>
 
             <form onSubmit={handleCrearCita} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-[#031926] mb-1">
                   Fecha y Hora
                 </label>
                 <input
@@ -911,12 +911,12 @@ function PortalContent() {
                   required
                   value={fechaCita}
                   onChange={(e) => setFechaCita(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-[#031926] mb-1">
                   Modalidad
                 </label>
                 <div className="grid grid-cols-2 gap-2">
@@ -925,38 +925,38 @@ function PortalContent() {
                     onClick={() => setModalidadCita("virtual")}
                     className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer ${
                       modalidadCita === "virtual"
-                        ? "bg-indigo-50 border-indigo-600 text-indigo-700"
-                        : "border-slate-200 text-slate-600"
+                        ? "bg-[#9DBEBB]/25 border-[#468189] text-[#031926]"
+                        : "border-[#9DBEBB]/40 text-[#031926]/70"
                     }`}
                   >
-                    <Video className="w-3.5 h-3.5" />
-                    Virtual (Meet/Zoom)
+                    <Video className="w-3.5 h-3.5 text-[#468189]" />
+                    Virtual (Meet)
                   </button>
                   <button
                     type="button"
                     onClick={() => setModalidadCita("presencial")}
                     className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer ${
                       modalidadCita === "presencial"
-                        ? "bg-indigo-50 border-indigo-600 text-indigo-700"
-                        : "border-slate-200 text-slate-600"
+                        ? "bg-[#9DBEBB]/25 border-[#468189] text-[#031926]"
+                        : "border-[#9DBEBB]/40 text-[#031926]/70"
                     }`}
                   >
-                    <MapPin className="w-3.5 h-3.5" />
+                    <MapPin className="w-3.5 h-3.5 text-[#468189]" />
                     Presencial
                   </button>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-[#031926] mb-1">
                   Motivo o tema a tratar (Opcional)
                 </label>
                 <textarea
                   rows={2}
                   value={motivoCita}
                   onChange={(e) => setMotivoCita(e.target.value)}
-                  placeholder="Ej: Seguimiento del plan de tratamiento o consulta prioritaria."
-                  className="w-full p-2.5 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Ej: Seguimiento del plan de tratamiento, burnout o consulta prioritaria."
+                  className="w-full p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
                 />
               </div>
 
@@ -964,13 +964,13 @@ function PortalContent() {
                 <button
                   type="button"
                   onClick={() => setMostrarModalCita(false)}
-                  className="w-1/2 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-xs hover:bg-slate-50 transition cursor-pointer"
+                  className="w-1/2 py-2.5 rounded-xl border border-[#9DBEBB]/60 text-[#031926]/70 font-semibold text-xs hover:bg-[#FBF8F1] transition cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="w-1/2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow transition cursor-pointer"
+                  className="w-1/2 py-2.5 rounded-xl bg-[#468189] hover:bg-[#031926] text-white font-semibold text-xs shadow-md shadow-[#468189]/20 transition cursor-pointer"
                 >
                   Confirmar Cita
                 </button>
@@ -979,29 +979,30 @@ function PortalContent() {
           </div>
         </div>
       )}
+
       {/* Modal: Calificar Sesión Finalizada (1 sola vez por servicio) */}
       {citaACalificar && (
-        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200">
+        <div className="fixed inset-0 z-50 bg-[#031926]/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-[#9DBEBB]/40">
             <div className="flex items-center gap-2 mb-2">
-              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-xl bg-[#F4E9CD] text-amber-500 flex items-center justify-center">
                 <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
               </div>
-              <h3 className="text-base font-bold text-slate-900">
+              <h3 className="text-base font-bold text-[#031926]">
                 Calificar Sesión Finalizada
               </h3>
             </div>
-            <p className="text-xs text-slate-500 mb-5 leading-relaxed">
-              Tu opinión es muy valiosa para nosotros. Esta calificación se registrará una sola vez para esta consulta.
+            <p className="text-xs text-[#031926]/70 mb-5 leading-relaxed">
+              Tu opinión es muy valiosa para Alejandra Bedoya. Esta calificación se registrará una sola vez para esta consulta.
             </p>
 
             <form onSubmit={handleEnviarCalificacion} className="space-y-4">
               {/* Selector de 1 a 5 estrellas */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-2">
+                <label className="block text-xs font-semibold text-[#031926] mb-2">
                   ¿Cómo calificarías la atención recibida?
                 </label>
-                <div className="flex items-center justify-center gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                <div className="flex items-center justify-center gap-2 p-3 bg-[#FBF8F1] rounded-2xl border border-[#9DBEBB]/40">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <button
                       key={star}
@@ -1013,13 +1014,13 @@ function PortalContent() {
                         className={`w-7 h-7 ${
                           star <= estrellasCalificar
                             ? "fill-amber-400 text-amber-400"
-                            : "text-slate-300"
+                            : "text-[#9DBEBB]"
                         }`}
                       />
                     </button>
                   ))}
                 </div>
-                <div className="text-center mt-1.5 text-xs font-semibold text-amber-800">
+                <div className="text-center mt-1.5 text-xs font-bold text-[#031926]">
                   {estrellasCalificar === 5 && "⭐ Excelente servicio"}
                   {estrellasCalificar === 4 && "⭐ Muy buen servicio"}
                   {estrellasCalificar === 3 && "⭐ Regular"}
@@ -1030,7 +1031,7 @@ function PortalContent() {
 
               {/* Comentario opcional */}
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-[#031926] mb-1">
                   Tu testimonio o comentario (Opcional)
                 </label>
                 <textarea
@@ -1038,7 +1039,7 @@ function PortalContent() {
                   value={comentarioCalificar}
                   onChange={(e) => setComentarioCalificar(e.target.value)}
                   placeholder="Comparte cómo te sentiste en esta sesión y qué aprendizajes te llevas..."
-                  className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full p-3 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
                 />
               </div>
 
@@ -1046,14 +1047,14 @@ function PortalContent() {
                 <button
                   type="button"
                   onClick={() => setCitaACalificar(null)}
-                  className="w-1/2 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-xs hover:bg-slate-50 transition cursor-pointer"
+                  className="w-1/2 py-2.5 rounded-xl border border-[#9DBEBB]/60 text-[#031926]/70 font-semibold text-xs hover:bg-[#FBF8F1] transition cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
                   disabled={enviandoCalificacion}
-                  className="w-1/2 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold text-xs shadow-md shadow-emerald-200 transition cursor-pointer disabled:opacity-60"
+                  className="w-1/2 py-2.5 rounded-xl bg-[#468189] hover:bg-[#031926] text-white font-semibold text-xs shadow-md shadow-[#468189]/20 transition cursor-pointer disabled:opacity-60"
                 >
                   {enviandoCalificacion ? "Guardando..." : "Publicar Calificación"}
                 </button>
@@ -1070,8 +1071,8 @@ export default function PortalPage() {
   return (
     <Suspense
       fallback={
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center">
-          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" />
+        <div className="min-h-screen bg-[#FBF8F1] flex items-center justify-center">
+          <div className="w-10 h-10 border-4 border-[#468189] border-t-transparent rounded-full animate-spin" />
         </div>
       }
     >
