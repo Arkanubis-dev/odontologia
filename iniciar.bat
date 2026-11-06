@@ -1,10 +1,10 @@
 @echo off
 chcp 65001 > nul
-title Servidor Odontologia - En ejecucion
+title Servidor Psicologia - En ejecucion
 cd /d "%~dp0"
 
 echo ========================================================
-echo   INICIANDO SISTEMA DE GESTION ODONTOLOGICA
+echo   INICIANDO SISTEMA DE GESTION PSICOLOGICA
 echo ========================================================
 echo.
 echo [1/2] Abriendo navegador en http://localhost:3000...

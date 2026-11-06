@@ -1,10 +1,10 @@
 @echo off
 chcp 65001 > nul
-title Reiniciar Servidor Odontologia
+title Reiniciar Servidor Psicologia
 cd /d "%~dp0"
 
 echo ========================================================
-echo   REINICIANDO SERVIDOR ODONTOLOGICO
+echo   REINICIANDO SERVIDOR PSICOLOGICO
 echo ========================================================
 echo.
 echo Deteniendo procesos previos en puerto 3000...

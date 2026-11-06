@@ -1,10 +1,10 @@
 @echo off
 chcp 65001 > nul
-title Detener Servidor Odontologia
+title Detener Servidor Psicologia
 cd /d "%~dp0"
 
 echo ========================================================
-echo   DETENIENDO SERVIDOR ODONTOLOGICO (PUERTO 3000)
+echo   DETENIENDO SERVIDOR PSICOLOGICO (PUERTO 3000)
 echo ========================================================
 echo.
 
