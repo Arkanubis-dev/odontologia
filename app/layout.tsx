@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Centro de Psicología | Gestión Clínica & Consultas",
-  description: "Plataforma integral de gestión para profesionales de la salud mental, sesiones y pacientes.",
+  title: "Alejandra Bedoya | Psicología Laboral & Terapéutica",
+  description: "Acompañamiento psicológico profesional, personalizado y confidencial con Alejandra Bedoya. Terapia online y presencial.",
 };
 
 export default function RootLayout({
