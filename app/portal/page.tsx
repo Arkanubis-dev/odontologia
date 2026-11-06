@@ -18,7 +18,8 @@ import {
   Clock,
   Sparkles,
   ShieldCheck,
-  Send
+  Send,
+  Star
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -27,7 +28,7 @@ interface Cita {
   fecha_hora: string;
   modalidad: "virtual" | "presencial";
   enlace_reunion?: string;
-  estado: "pendiente" | "confirmada" | "completada" | "cancelada";
+  estado: "pendiente" | "confirmada" | "completada" | "cancelada" | "finalizado";
   notas_paciente?: string;
 }
 
@@ -46,6 +47,14 @@ interface RegistroEmocional {
   emocion_principal: string;
   notas: string;
   creado_en: string;
+}
+
+interface Calificacion {
+  id?: string;
+  cita_id: string;
+  estrellas: number;
+  comentario: string;
+  nombre_mostrar?: string;
 }
 
 function PortalContent() {
@@ -67,6 +76,13 @@ function PortalContent() {
   const [citas, setCitas] = useState<Cita[]>([]);
   const [tareas, setTareas] = useState<Tarea[]>([]);
   const [registrosEmocionales, setRegistrosEmocionales] = useState<RegistroEmocional[]>([]);
+  const [calificaciones, setCalificaciones] = useState<Record<string, Calificacion>>({});
+
+  // Estados de calificación de sesión
+  const [citaACalificar, setCitaACalificar] = useState<Cita | null>(null);
+  const [estrellasCalificar, setEstrellasCalificar] = useState<number>(5);
+  const [comentarioCalificar, setComentarioCalificar] = useState<string>("");
+  const [enviandoCalificacion, setEnviandoCalificacion] = useState<boolean>(false);
 
   // Estados de formularios interactivos
   const [nuevoAnimo, setNuevoAnimo] = useState<number>(4);
@@ -122,11 +138,20 @@ function PortalContent() {
 
       // Cargar datos reales desde Supabase
       try {
-        const [citasRes, tareasRes, animoRes] = await Promise.all([
+        const [citasRes, tareasRes, animoRes, califRes] = await Promise.all([
           supabase.from("citas").select("*").order("fecha_hora", { ascending: true }),
           supabase.from("tareas_terapia").select("*").order("creado_en", { ascending: false }),
           supabase.from("registro_emocional").select("*").order("creado_en", { ascending: false }).limit(10),
+          supabase.from("calificaciones").select("*").eq("paciente_id", authUser.id),
         ]);
+
+        if (califRes.data && califRes.data.length > 0) {
+          const map: Record<string, Calificacion> = {};
+          califRes.data.forEach((c: any) => {
+            map[c.cita_id] = c;
+          });
+          setCalificaciones(map);
+        }
 
         if (citasRes.data && citasRes.data.length > 0) {
           setCitas(citasRes.data);
@@ -225,6 +250,45 @@ function PortalContent() {
         creado_en: new Date().toISOString(),
       },
     ]);
+  };
+
+  // Enviar calificación de sesión finalizada
+  const handleEnviarCalificacion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!citaACalificar) return;
+
+    setEnviandoCalificacion(true);
+    const nuevaCalif: Calificacion = {
+      cita_id: citaACalificar.id,
+      estrellas: estrellasCalificar,
+      comentario: comentarioCalificar,
+      nombre_mostrar: user?.nombre || "Consultante",
+    };
+
+    setCalificaciones((prev) => ({
+      ...prev,
+      [citaACalificar.id]: nuevaCalif,
+    }));
+
+    if (!isDemo && user?.id) {
+      const supabase = createClient();
+      if (supabase) {
+        await supabase.from("calificaciones").insert({
+          cita_id: citaACalificar.id,
+          paciente_id: user.id,
+          estrellas: estrellasCalificar,
+          comentario: comentarioCalificar,
+          nombre_mostrar: user.nombre || "Consultante",
+          servicio: "Sesión Terapéutica",
+          es_publico: true,
+        });
+      }
+    }
+
+    setEnviandoCalificacion(false);
+    setCitaACalificar(null);
+    setComentarioCalificar("");
+    setEstrellasCalificar(5);
   };
 
   // Marcar tarea como completada o pendiente
@@ -541,11 +605,63 @@ function PortalContent() {
                           href={cita.enlace_reunion}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition"
+                          className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition mb-3"
                         >
                           <Video className="w-4 h-4" />
                           Unirse a la Sesión Virtual
                         </a>
+                      )}
+
+                      {/* Calificación: Solo si la especialista finalizó el servicio */}
+                      {(cita.estado === "completada" || cita.estado === "finalizado") ? (
+                        calificaciones[cita.id] ? (
+                          <div className="mt-4 p-3 rounded-2xl bg-amber-50/80 border border-amber-200/80 flex flex-col gap-1.5">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-1 text-amber-400">
+                                {[...Array(calificaciones[cita.id].estrellas)].map((_, i) => (
+                                  <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                                ))}
+                                <span className="text-xs font-bold text-amber-900 ml-1">
+                                  Calificación registrada
+                                </span>
+                              </div>
+                              <span className="text-[10px] text-amber-700 font-semibold uppercase bg-amber-100/60 px-2 py-0.5 rounded-full">
+                                1 por servicio
+                              </span>
+                            </div>
+                            {calificaciones[cita.id].comentario && (
+                              <p className="text-xs text-amber-800 italic mt-0.5">
+                                "{calificaciones[cita.id].comentario}"
+                              </p>
+                            )}
+                          </div>
+                        ) : (
+                          <div className="mt-4 p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-between gap-3">
+                            <div>
+                              <p className="text-xs font-bold text-emerald-900">
+                                Sesión Finalizada
+                              </p>
+                              <p className="text-[11px] text-emerald-700">
+                                Califica el servicio prestado (1 a 5 estrellas)
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => {
+                                setCitaACalificar(cita);
+                                setEstrellasCalificar(5);
+                                setComentarioCalificar("");
+                              }}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-xs shadow-xs transition cursor-pointer shrink-0"
+                            >
+                              <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
+                              <span>Calificar</span>
+                            </button>
+                          </div>
+                        )
+                      ) : (
+                        <p className="text-[10px] text-slate-400 mt-3 italic flex items-center gap-1">
+                          <span>* Podrás calificar esta sesión una vez la psicóloga marque el servicio como finalizado.</span>
+                        </p>
                       )}
                     </div>
                   );
@@ -857,6 +973,89 @@ function PortalContent() {
                   className="w-1/2 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs shadow transition cursor-pointer"
                 >
                   Confirmar Cita
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+      {/* Modal: Calificar Sesión Finalizada (1 sola vez por servicio) */}
+      {citaACalificar && (
+        <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-200">
+            <div className="flex items-center gap-2 mb-2">
+              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-500 flex items-center justify-center">
+                <Star className="w-4 h-4 fill-amber-400 text-amber-400" />
+              </div>
+              <h3 className="text-base font-bold text-slate-900">
+                Calificar Sesión Finalizada
+              </h3>
+            </div>
+            <p className="text-xs text-slate-500 mb-5 leading-relaxed">
+              Tu opinión es muy valiosa para nosotros. Esta calificación se registrará una sola vez para esta consulta.
+            </p>
+
+            <form onSubmit={handleEnviarCalificacion} className="space-y-4">
+              {/* Selector de 1 a 5 estrellas */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-2">
+                  ¿Cómo calificarías la atención recibida?
+                </label>
+                <div className="flex items-center justify-center gap-2 p-3 bg-slate-50 rounded-2xl border border-slate-100">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setEstrellasCalificar(star)}
+                      className="p-1 hover:scale-115 transition transform cursor-pointer"
+                    >
+                      <Star
+                        className={`w-7 h-7 ${
+                          star <= estrellasCalificar
+                            ? "fill-amber-400 text-amber-400"
+                            : "text-slate-300"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                <div className="text-center mt-1.5 text-xs font-semibold text-amber-800">
+                  {estrellasCalificar === 5 && "⭐ Excelente servicio"}
+                  {estrellasCalificar === 4 && "⭐ Muy buen servicio"}
+                  {estrellasCalificar === 3 && "⭐ Regular"}
+                  {estrellasCalificar === 2 && "⭐ Podría mejorar"}
+                  {estrellasCalificar === 1 && "⭐ Insatisfactorio"}
+                </div>
+              </div>
+
+              {/* Comentario opcional */}
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                  Tu testimonio o comentario (Opcional)
+                </label>
+                <textarea
+                  rows={3}
+                  value={comentarioCalificar}
+                  onChange={(e) => setComentarioCalificar(e.target.value)}
+                  placeholder="Comparte cómo te sentiste en esta sesión y qué aprendizajes te llevas..."
+                  className="w-full p-3 rounded-xl border border-slate-200 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setCitaACalificar(null)}
+                  className="w-1/2 py-2.5 rounded-xl border border-slate-200 text-slate-600 font-semibold text-xs hover:bg-slate-50 transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={enviandoCalificacion}
+                  className="w-1/2 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white font-semibold text-xs shadow-md shadow-emerald-200 transition cursor-pointer disabled:opacity-60"
+                >
+                  {enviandoCalificacion ? "Guardando..." : "Publicar Calificación"}
                 </button>
               </div>
             </form>

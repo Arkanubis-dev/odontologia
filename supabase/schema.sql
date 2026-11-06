@@ -52,6 +52,20 @@ create table if not exists public.registro_emocional (
   creado_en timestamp with time zone default timezone('utc'::text, now()) not null
 );
 
+-- 6. TABLA DE CALIFICACIONES Y RESEÑAS
+-- Regla de negocio: Solo 1 calificación por cita finalizada/completada
+create table if not exists public.calificaciones (
+  id uuid default gen_random_uuid() primary key,
+  cita_id uuid references public.citas(id) on delete cascade unique not null,
+  paciente_id uuid references public.perfiles(id) on delete cascade not null,
+  estrellas integer check (estrellas between 1 and 5) not null,
+  comentario text,
+  nombre_mostrar text,
+  servicio text default 'Terapia Individual',
+  es_publico boolean default true,
+  creado_en timestamp with time zone default timezone('utc'::text, now()) not null
+);
+
 -- ========================================================
 -- SEGURIDAD: ROW LEVEL SECURITY (RLS)
 -- Cada paciente solo puede ver y editar sus propios datos
@@ -61,6 +75,24 @@ alter table public.perfiles enable row level security;
 alter table public.citas enable row level security;
 alter table public.tareas_terapia enable row level security;
 alter table public.registro_emocional enable row level security;
+alter table public.calificaciones enable row level security;
+
+-- Políticas para CALIFICACIONES (Público puede leer para mostrar en la web)
+drop policy if exists "Cualquiera puede leer resenas publicas" on public.calificaciones;
+create policy "Cualquiera puede leer resenas publicas"
+  on public.calificaciones for select
+  using (es_publico = true);
+
+drop policy if exists "Los pacientes pueden calificar sus citas finalizadas" on public.calificaciones;
+create policy "Los pacientes pueden calificar sus citas finalizadas"
+  on public.calificaciones for insert
+  with check (
+    auth.uid() = paciente_id and
+    exists (
+      select 1 from public.citas
+      where id = cita_id and paciente_id = auth.uid() and estado in ('completada', 'finalizado')
+    )
+  );
 
 -- Políticas para PERFILES
 drop policy if exists "Los usuarios pueden ver su propio perfil" on public.perfiles;
@@ -137,3 +169,4 @@ drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
+

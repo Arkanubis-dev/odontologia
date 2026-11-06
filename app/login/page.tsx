@@ -229,17 +229,6 @@ export default function LoginPage() {
                 : "¿Eres un nuevo consultante? Regístrate aquí"}
             </button>
           </div>
-
-          {/* Botón de Acceso Rápido Demo (Para probar sin necesidad de configurar Google) */}
-          <div className="mt-6 pt-5 border-t border-slate-100">
-            <Link
-              href="/portal?demo=true"
-              className="w-full flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 font-medium text-xs border border-slate-200 transition"
-            >
-              <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-              <span>Explorar Portal en Modo Demostración</span>
-            </Link>
-          </div>
         </div>
 
         {/* Nota de Privacidad */}
@@ -251,3 +240,4 @@ export default function LoginPage() {
     </div>
   );
 }
+
