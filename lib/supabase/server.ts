@@ -2,12 +2,15 @@ import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
 export async function createClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!rawUrl || !supabaseAnonKey) {
     return null;
   }
+
+  // Sanitizar URL base (remover /rest/v1 o barras al final si vienen en el env)
+  const supabaseUrl = rawUrl.replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
 
   let cookieStore: any = null;
   try {
@@ -28,7 +31,7 @@ export async function createClient() {
             cookieStore.set(name, value, options)
           );
         } catch {
-          // Can be ignored if middleware is refreshing sessions.
+          // Puede ser ignorado si el middleware refresca la sesión
         }
       },
     },
