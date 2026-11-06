@@ -316,16 +316,16 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Imagen Principal: Representación cálida de Alejandra en consulta */}
+            {/* Imagen Principal: Foto Real de Alejandra Bedoya */}
             <div className="lg:col-span-5 relative">
               <div className="relative mx-auto max-w-md lg:max-w-none">
                 <div className="rounded-3xl overflow-hidden shadow-2xl border-4 border-white aspect-4/5 bg-slate-100 relative">
                   <img
-                    src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=1000&q=80"
-                    alt="Alejandra Bedoya Psicóloga Profesional"
-                    className="w-full h-full object-cover"
+                    src="/alejandra-bedoya.jpg"
+                    alt="Alejandra Bedoya - Psicóloga Laboral & Terapéutica"
+                    className="w-full h-full object-cover object-top"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#031926]/80 via-transparent to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#031926]/85 via-transparent to-transparent" />
                   <div className="absolute bottom-6 left-6 right-6 text-white">
                     <span className="inline-block px-2.5 py-0.5 rounded-full bg-[#77ACA2] text-white text-[10px] font-bold uppercase tracking-wider mb-2">
                       ● Citas Disponibles
@@ -354,14 +354,18 @@ export default function Home() {
       <section id="sobre-mi" className="py-20 bg-white border-b border-[#9DBEBB]/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-            {/* Foto de Alejandra en espacio terapéutico */}
+            {/* Foto Real de Alejandra en su espacio de consulta */}
             <div className="lg:col-span-5">
-              <div className="relative rounded-3xl overflow-hidden shadow-xl border-2 border-[#9DBEBB]/50 aspect-square">
+              <div className="relative rounded-3xl overflow-hidden shadow-xl border-4 border-[#FBF8F1] aspect-4/5 bg-slate-50">
                 <img
-                  src="https://images.unsplash.com/photo-1573497620053-ea5300f94f21?auto=format&fit=crop&w=900&q=80"
-                  alt="Espacio terapéutico de Alejandra Bedoya"
-                  className="w-full h-full object-cover"
+                  src="/alejandra-bedoya.jpg"
+                  alt="Alejandra Bedoya en su espacio terapéutico"
+                  className="w-full h-full object-cover object-top hover:scale-102 transition duration-500"
                 />
+                <div className="absolute bottom-4 left-4 right-4 bg-white/95 backdrop-blur-md p-3.5 rounded-2xl border border-[#9DBEBB]/40 shadow-lg">
+                  <p className="text-xs font-bold text-[#031926]">Alejandra Bedoya</p>
+                  <p className="text-[11px] text-[#468189] font-medium">Consulta Virtual & Presencial</p>
+                </div>
               </div>
             </div>
 

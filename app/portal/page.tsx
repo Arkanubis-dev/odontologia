@@ -594,6 +594,19 @@ function PortalContent() {
                         {horaFormateada}
                       </p>
 
+                      {/* Especialista Asignada */}
+                      <div className="flex items-center gap-2.5 py-2 px-3 rounded-xl bg-[#FBF8F1] border border-[#9DBEBB]/30 mb-3">
+                        <img
+                          src="/alejandra-bedoya.jpg"
+                          alt="Alejandra Bedoya"
+                          className="w-8 h-8 rounded-full object-cover object-top border border-[#77ACA2]/50 shrink-0"
+                        />
+                        <div>
+                          <p className="text-xs font-bold text-[#031926]">Alejandra Bedoya</p>
+                          <p className="text-[10px] text-[#468189] font-medium">Especialista en Psicología</p>
+                        </div>
+                      </div>
+
                       {cita.notas_paciente && (
                         <p className="text-xs text-[#031926]/75 bg-[#FBF8F1] p-3 rounded-xl border border-[#9DBEBB]/30 mb-4">
                           {cita.notas_paciente}
@@ -991,6 +1004,17 @@ function PortalContent() {
               <h3 className="text-base font-bold text-[#031926]">
                 Calificar Sesión Finalizada
               </h3>
+            </div>
+            <div className="flex items-center gap-3 p-3 bg-[#FBF8F1] rounded-2xl border border-[#9DBEBB]/40 mb-3">
+              <img
+                src="/alejandra-bedoya.jpg"
+                alt="Alejandra Bedoya"
+                className="w-10 h-10 rounded-full object-cover object-top border border-[#77ACA2]/60 shrink-0"
+              />
+              <div>
+                <p className="text-xs font-bold text-[#031926]">Alejandra Bedoya</p>
+                <p className="text-[10px] text-[#468189] font-medium">Psicóloga Laboral & Terapéutica</p>
+              </div>
             </div>
             <p className="text-xs text-[#031926]/70 mb-5 leading-relaxed">
               Tu opinión es muy valiosa para Alejandra Bedoya. Esta calificación se registrará una sola vez para esta consulta.

@@ -105,8 +105,12 @@ export default function LoginPage() {
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
         <div className="flex justify-center">
-          <div className="w-14 h-14 rounded-2xl bg-[#468189] flex items-center justify-center text-white shadow-lg shadow-[#468189]/25">
-            <Brain className="w-8 h-8" />
+          <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-[#77ACA2]/50 shadow-lg shadow-[#468189]/25">
+            <img
+              src="/alejandra-bedoya.jpg"
+              alt="Alejandra Bedoya - Psicóloga Laboral & Terapéutica"
+              className="w-full h-full object-cover object-top"
+            />
           </div>
         </div>
         <div className="mt-3 inline-block px-3 py-1 rounded-full bg-[#F4E9CD] text-[#031926] text-[11px] font-bold tracking-wide">
