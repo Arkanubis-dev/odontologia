@@ -1,3 +1,4 @@
+import Link from "next/link";
 import {
   Brain,
   Calendar,
@@ -9,7 +10,9 @@ import {
   Clock,
   Plus,
   Sparkles,
-  ClipboardList
+  ClipboardList,
+  LogIn,
+  UserCheck
 } from "lucide-react";
 
 export default function Home() {
@@ -35,7 +38,7 @@ export default function Home() {
           </div>
           <div className="flex items-center gap-3">
             <span
-              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+              className={`hidden sm:inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
                 isSupabaseConfigured
                   ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                   : "bg-amber-50 text-amber-700 border-amber-200"
@@ -46,8 +49,16 @@ export default function Home() {
                   isSupabaseConfigured ? "bg-emerald-500" : "bg-amber-500 animate-pulse"
                 }`}
               />
-              {isSupabaseConfigured ? "Base de Datos Conectada" : "Supabase Pendiente"}
+              {isSupabaseConfigured ? "Supabase Conectado" : "Supabase Pendiente"}
             </span>
+
+            <Link
+              href="/login"
+              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-700 hover:to-violet-700 text-white text-xs font-semibold shadow-sm transition"
+            >
+              <LogIn className="w-3.5 h-3.5" />
+              <span>Portal Pacientes</span>
+            </Link>
           </div>
         </div>
       </header>
@@ -69,14 +80,20 @@ export default function Home() {
               sesiones presenciales y virtuales, notas de evolución y seguimiento del progreso de tus consultantes.
             </p>
             <div className="flex flex-wrap gap-3">
-              <button className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-indigo-950 font-semibold text-sm shadow hover:bg-indigo-50 transition cursor-pointer">
-                <Plus className="w-4 h-4" />
-                Registrar Paciente
-              </button>
-              <button className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-700/60 hover:bg-indigo-700 text-white font-medium text-sm border border-indigo-500/40 transition cursor-pointer">
-                <Calendar className="w-4 h-4" />
-                Agendar Sesión
-              </button>
+              <Link
+                href="/login"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white text-indigo-950 font-semibold text-xs sm:text-sm shadow hover:bg-indigo-50 transition cursor-pointer"
+              >
+                <UserCheck className="w-4 h-4 text-indigo-600" />
+                Acceder a mi Portal (Google / Correo)
+              </Link>
+              <Link
+                href="/portal?demo=true"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-indigo-700/60 hover:bg-indigo-700 text-white font-medium text-xs sm:text-sm border border-indigo-500/40 transition cursor-pointer"
+              >
+                <Sparkles className="w-4 h-4 text-amber-300" />
+                Probar Modo Demo
+              </Link>
             </div>
           </div>
 
