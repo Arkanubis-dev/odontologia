@@ -348,14 +348,24 @@ function AdminContent() {
 
       setEmocionales(rawEmocionales);
 
-      // 5. Cargar calificaciones
-      const { data: dataCalificaciones } = await supabase
-        .from("calificaciones")
-        .select("*")
-        .order("creado_en", { ascending: false });
+      // 5. Cargar calificaciones reales
+      try {
+        const califRes = await fetch("/api/calificaciones?admin=true");
+        if (califRes.ok) {
+          const califData = await califRes.json();
+          if (Array.isArray(califData)) {
+            setCalificaciones(califData);
+          }
+        }
+      } catch {
+        const { data: dataCalificaciones } = await supabase
+          .from("calificaciones")
+          .select("*")
+          .order("creado_en", { ascending: false });
 
-      if (dataCalificaciones) {
-        setCalificaciones(dataCalificaciones);
+        if (dataCalificaciones) {
+          setCalificaciones(dataCalificaciones);
+        }
       }
     } catch (err) {
       console.error("Error al cargar datos en panel de psicóloga:", err);

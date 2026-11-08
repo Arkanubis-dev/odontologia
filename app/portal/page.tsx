@@ -182,12 +182,27 @@ function PortalContent() {
             .eq("paciente_id", authUser.id),
         ]);
 
-        if (califRes.data && califRes.data.length > 0) {
-          const map: Record<string, Calificacion> = {};
-          califRes.data.forEach((c: any) => {
-            map[c.cita_id] = c;
-          });
-          setCalificaciones(map);
+        // Cargar calificaciones reales del paciente
+        try {
+          const califApiRes = await fetch(`/api/calificaciones?paciente_id=${authUser.id}`);
+          if (califApiRes.ok) {
+            const califApiData = await califApiRes.json();
+            if (Array.isArray(califApiData) && califApiData.length > 0) {
+              const map: Record<string, Calificacion> = {};
+              califApiData.forEach((c: any) => {
+                map[c.cita_id] = c;
+              });
+              setCalificaciones(map);
+            }
+          }
+        } catch {
+          if (califRes.data && califRes.data.length > 0) {
+            const map: Record<string, Calificacion> = {};
+            califRes.data.forEach((c: any) => {
+              map[c.cita_id] = c;
+            });
+            setCalificaciones(map);
+          }
         }
 
         // Cargar lista de psicólogas disponibles
@@ -329,17 +344,25 @@ function PortalContent() {
     }));
 
     if (!isDemo && user?.id) {
-      const supabase = createClient();
-      if (supabase) {
-        await supabase.from("calificaciones").insert({
-          cita_id: citaACalificar.id,
-          paciente_id: user.id,
-          estrellas: estrellasCalificar,
-          comentario: comentarioCalificar,
-          nombre_mostrar: user.nombre || "Consultante",
-          servicio: "Sesión Terapéutica",
-          es_publico: true,
+      try {
+        const res = await fetch("/api/calificaciones", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            cita_id: citaACalificar.id,
+            paciente_id: user.id,
+            estrellas: estrellasCalificar,
+            comentario: comentarioCalificar,
+            nombre_mostrar: user.nombre || "Consultante",
+          }),
         });
+
+        if (!res.ok) {
+          const errData = await res.json();
+          console.error("Error al registrar calificación:", errData);
+        }
+      } catch (err) {
+        console.error("Error de red al calificar:", err);
       }
     }
 

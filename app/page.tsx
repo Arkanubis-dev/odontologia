@@ -50,21 +50,15 @@ export default function Home() {
   useEffect(() => {
     async function cargarResenas() {
       try {
-        const supabase = createClient();
-        if (supabase) {
-          const { data } = await supabase
-            .from("calificaciones")
-            .select("*")
-            .eq("es_publico", true)
-            .order("creado_en", { ascending: false })
-            .limit(6);
-
-          if (data && data.length > 0) {
+        const res = await fetch("/api/calificaciones");
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data) && data.length > 0) {
             setResenas(data);
-          } else {
-            setResenas([]);
+            return;
           }
         }
+        setResenas([]);
       } catch (err) {
         console.error("Error al cargar reseñas:", err);
         setResenas([]);
