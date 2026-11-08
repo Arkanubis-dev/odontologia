@@ -151,11 +151,11 @@ export async function POST(request: NextRequest) {
       });
 
       if (signUpErr) {
-        if (signUpErr.message.toLowerCase().includes("rate limit") || signUpErr.message.toLowerCase().includes("email")) {
+        if (signUpErr.message.toLowerCase().includes("rate limit")) {
           return NextResponse.json(
             {
               error:
-                "Límite de correos de Supabase alcanzado. Solución rápida: Ve a Supabase Dashboard ➔ Authentication ➔ Providers ➔ Email y DESMARCA la casilla 'Confirm email'. Así los usuarios se crean al instante sin intentar enviar correos y sin ningún límite.",
+                "Límite de correos de Supabase alcanzado. Ve a Supabase Dashboard ➔ Authentication ➔ Providers ➔ Email y desmarca la casilla 'Confirm email'.",
             },
             { status: 400 }
           );
