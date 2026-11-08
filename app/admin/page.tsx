@@ -33,6 +33,12 @@ import {
   Eye,
   EyeOff,
   Copy,
+  Trash2,
+  CalendarDays,
+  ExternalLink,
+  Settings,
+  RefreshCw,
+  X,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -49,12 +55,14 @@ interface Perfil {
 interface Cita {
   id: string;
   paciente_id: string;
+  psicologo_id?: string;
   fecha_hora: string;
   modalidad: "virtual" | "presencial";
   enlace_reunion?: string;
   estado: "pendiente" | "confirmada" | "completada" | "cancelada" | "finalizado";
   notas_paciente?: string;
   paciente?: Perfil;
+  psicologo?: Perfil;
 }
 
 interface Tarea {
@@ -107,8 +115,28 @@ function AdminContent() {
   // Pestaña activa
   const [tabActiva, setTabActiva] = useState<"citas" | "pacientes" | "tareas" | "calificaciones" | "roles" | "crear-usuario">("citas");
   const [filtroCitas, setFiltroCitas] = useState<string>("todas");
+  const [filtroPsicologo, setFiltroPsicologo] = useState<string>("todos");
   const [busqueda, setBusqueda] = useState<string>("");
   const [busquedaUsuarios, setBusquedaUsuarios] = useState<string>("");
+
+  // Perfil del usuario actual autenticado
+  const [currentUserPerfil, setCurrentUserPerfil] = useState<Perfil | null>(null);
+
+  // Modal para Reprogramar / Editar Cita
+  const [citaParaReprogramar, setCitaParaReprogramar] = useState<Cita | null>(null);
+  const [reprogramarFecha, setReprogramarFecha] = useState("");
+  const [reprogramarHora, setReprogramarHora] = useState("");
+  const [reprogramarEstado, setReprogramarEstado] = useState("");
+  const [reprogramarEnlace, setReprogramarEnlace] = useState("");
+  const [guardandoReprogramacion, setGuardandoReprogramacion] = useState(false);
+
+  // Modal para Configuración de Disponibilidad y Horarios del Psicólogo (Estilo Selia)
+  const [mostrarModalDisponibilidad, setMostrarModalDisponibilidad] = useState(false);
+  const [diasLaborales, setDiasLaborales] = useState<string[]>(["lunes", "martes", "miercoles", "jueves", "viernes"]);
+  const [horaInicioLab, setHoraInicioLab] = useState("08:00");
+  const [horaFinLab, setHoraFinLab] = useState("18:00");
+  const [duracionLab, setDuracionLab] = useState(50);
+  const [guardandoDisponibilidad, setGuardandoDisponibilidad] = useState(false);
 
   // Estados para Creador de Usuarios Locales (Super Admin)
   const [formUsuario, setFormUsuario] = useState({
@@ -192,6 +220,7 @@ function AdminContent() {
       }
 
       setCurrentUser(user);
+      setCurrentUserPerfil(perfil);
       setEsPsicologa(true);
 
       await recargarDatos(supabase);
@@ -245,20 +274,31 @@ function AdminContent() {
         mapaPacientes[p.id] = p;
       });
 
-      // 2. Cargar citas
-      const { data: dataCitas } = await supabase
-        .from("citas")
-        .select("*")
-        .order("fecha_hora", { ascending: false });
+      // 2. Cargar citas con API robusta
+      let rawCitas: any[] = [];
+      try {
+        const resCitas = await fetch("/api/citas");
+        if (resCitas.ok) {
+          const jsonCitas = await resCitas.json();
+          if (jsonCitas.citas) rawCitas = jsonCitas.citas;
+        }
+      } catch {}
 
-      if (dataCitas) {
-        setCitas(
-          dataCitas.map((c: any) => ({
-            ...c,
-            paciente: mapaPacientes[c.paciente_id],
-          }))
-        );
+      if (rawCitas.length === 0) {
+        const { data: dataCitas } = await supabase
+          .from("citas")
+          .select("*")
+          .order("fecha_hora", { ascending: false });
+        if (dataCitas) rawCitas = dataCitas;
       }
+
+      setCitas(
+        rawCitas.map((c: any) => ({
+          ...c,
+          paciente: mapaPacientes[c.paciente_id],
+          psicologo: mapaPacientes[c.psicologo_id],
+        }))
+      );
 
       // 3. Cargar tareas terapéuticas
       const { data: dataTareas } = await supabase
@@ -534,6 +574,131 @@ function AdminContent() {
     setTimeout(() => setCredencialesCopiadas(false), 3000);
   };
 
+  // Eliminar usuario permanentemente (Exclusivo Super Admin)
+  const handleEliminarUsuario = async (usuarioId: string, nombreOEmail: string) => {
+    if (
+      !confirm(
+        `¿Estás seguro de que deseas eliminar permanentemente a:\n"${nombreOEmail}"?\n\nEsta acción borrará su cuenta de acceso, su perfil y todas sus citas de forma irreversible.`
+      )
+    ) {
+      return;
+    }
+
+    try {
+      const supabase = createClient();
+      const session = supabase ? (await supabase.auth.getSession()).data.session : null;
+
+      const res = await fetch("/api/admin/eliminar-usuario", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ usuarioId }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo eliminar el usuario");
+
+      setPacientes((prev) => prev.filter((p) => p.id !== usuarioId));
+      alert("¡Usuario eliminado exitosamente del sistema!");
+    } catch (err: any) {
+      alert("Error al eliminar usuario: " + err.message);
+    }
+  };
+
+  // Generar Google Meet para una cita existente
+  const handleGenerarMeet = async (citaId: string) => {
+    try {
+      const res = await fetch(`/api/citas/${citaId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ generar_nuevo_meet: true }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo generar el enlace Meet");
+
+      setCitas((prev) =>
+        prev.map((c) => (c.id === citaId ? { ...c, enlace_reunion: data.cita.enlace_reunion } : c))
+      );
+      alert("¡Enlace de Google Meet generado y asignado!");
+    } catch (err: any) {
+      alert("Error al generar Meet: " + err.message);
+    }
+  };
+
+  // Guardar reprogramación o edición de cita
+  const handleGuardarReprogramacion = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!citaParaReprogramar) return;
+
+    setGuardandoReprogramacion(true);
+    try {
+      let fechaFinal = citaParaReprogramar.fecha_hora;
+      if (reprogramarFecha && reprogramarHora) {
+        fechaFinal = new Date(`${reprogramarFecha}T${reprogramarHora}:00`).toISOString();
+      }
+
+      const res = await fetch(`/api/citas/${citaParaReprogramar.id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fecha_hora: fechaFinal,
+          estado: reprogramarEstado || citaParaReprogramar.estado,
+          enlace_reunion: reprogramarEnlace,
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo actualizar la cita");
+
+      setCitas((prev) =>
+        prev.map((c) => (c.id === citaParaReprogramar.id ? { ...c, ...data.cita } : c))
+      );
+      setCitaParaReprogramar(null);
+      alert("¡Cita reprogramada / actualizada exitosamente!");
+    } catch (err: any) {
+      alert("Error al actualizar cita: " + err.message);
+    } finally {
+      setGuardandoReprogramacion(false);
+    }
+  };
+
+  // Guardar configuración de horarios de atención (Estilo Selia)
+  const handleGuardarDisponibilidad = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser?.id) return;
+
+    setGuardandoDisponibilidad(true);
+    try {
+      const payload = {
+        dias_laborales: diasLaborales,
+        hora_inicio: horaInicioLab,
+        hora_fin: horaFinLab,
+        duracion_minutos: duracionLab,
+      };
+
+      const res = await fetch("/api/admin/disponibilidad", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          psicologo_id: currentUser.id,
+          disponibilidad: payload,
+        }),
+      });
+
+      if (!res.ok) throw new Error("No se pudo guardar la configuración");
+
+      setMostrarModalDisponibilidad(false);
+      alert("¡Configuración de disponibilidad guardada exitosamente!");
+    } catch (err: any) {
+      alert("Error al guardar: " + err.message);
+    } finally {
+      setGuardandoDisponibilidad(false);
+    }
+  };
+
   const handleCerrarSesion = async () => {
     const supabase = createClient();
     if (supabase) {
@@ -586,8 +751,31 @@ function AdminContent() {
     );
   }
 
-  // Citas filtradas
+  // Nombre del usuario activo actual para saludo y encabezado dinámico
+  const nombreActivo =
+    currentUserPerfil?.nombre_completo ||
+    currentUser?.user_metadata?.full_name ||
+    currentUser?.email?.split("@")[0] ||
+    (esSuperAdmin ? "Camilo" : "Especialista");
+
+  // Lista de psicólogas registradas
+  const psicologasRegistradas = pacientes.filter(
+    (p) => p.rol === "psicologo" || p.email.toLowerCase().includes("alejandra")
+  );
+
+  // Citas filtradas por estado y por especialista
   const citasFiltradas = citas.filter((c) => {
+    // Si NO es Super Admin, la especialista (ej: Alyson o Alejandra) SOLO ve sus propias citas o sin asignar
+    if (!esSuperAdmin && currentUser?.id) {
+      if (c.psicologo_id && c.psicologo_id !== currentUser.id) {
+        return false;
+      }
+    } else if (esSuperAdmin && filtroPsicologo !== "todos") {
+      if (c.psicologo_id !== filtroPsicologo) {
+        return false;
+      }
+    }
+
     if (filtroCitas === "finalizadas") return c.estado === "finalizado" || c.estado === "completada";
     if (filtroCitas === "pendientes") return c.estado === "pendiente";
     if (filtroCitas === "confirmadas") return c.estado === "confirmada";
@@ -601,16 +789,20 @@ function AdminContent() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Link href="/" className="flex items-center gap-2.5">
-              <div className="w-11 h-11 rounded-2xl overflow-hidden border-2 border-[#77ACA2]/50 shadow-md shadow-[#468189]/20 shrink-0">
-                <img
-                  src="/alejandra-bedoya.jpg"
-                  alt="Alejandra Bedoya"
-                  className="w-full h-full object-cover object-top"
-                />
+              <div className="w-11 h-11 rounded-2xl overflow-hidden border-2 border-[#77ACA2]/50 shadow-md shadow-[#468189]/20 shrink-0 bg-[#031926] text-white flex items-center justify-center font-bold text-sm">
+                {currentUser?.email?.toLowerCase().includes("alejandra") ? (
+                  <img
+                    src="/alejandra-bedoya.jpg"
+                    alt="Alejandra Bedoya"
+                    className="w-full h-full object-cover object-top"
+                  />
+                ) : (
+                  <span>{nombreActivo.charAt(0).toUpperCase()}</span>
+                )}
               </div>
               <div>
                 <h1 className="text-sm sm:text-base font-bold text-[#031926] leading-tight">
-                  Alejandra Bedoya
+                  {nombreActivo}
                 </h1>
                 <div className="flex items-center gap-1.5 mt-0.5">
                   {esSuperAdmin ? (
@@ -624,7 +816,7 @@ function AdminContent() {
                     <>
                       <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                       <p className="text-[11px] text-[#468189] font-bold">
-                        Panel Profesional de Psicología
+                        Panel Especialista en Psicología
                       </p>
                     </>
                   )}
@@ -659,19 +851,27 @@ function AdminContent() {
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
             <div className="space-y-1.5 max-w-xl">
               <span className="inline-block px-3 py-1 bg-[#468189]/40 backdrop-blur-md rounded-full text-xs font-semibold uppercase tracking-wider text-[#9DBEBB] border border-[#77ACA2]/30">
-                {esSuperAdmin ? "👑 Modo Super Administrador" : "Gestión Clínica & Terapéutica"}
+                {esSuperAdmin ? "👑 Modo Super Administrador" : "Panel Clínico • Especialista"}
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                {esSuperAdmin ? "Bienvenido, Camilo 👋" : "Bienvenida, Alejandra 👋"}
+                Bienvenid@, {nombreActivo.split(" ")[0]} 👋
               </h2>
               <p className="text-[#9DBEBB] text-xs sm:text-sm leading-relaxed">
                 {esSuperAdmin
-                  ? "Panel de control maestro: asigna roles de psicóloga o administrador a los usuarios registrados, supervisa citas y tareas."
-                  : "Aquí administras tus citas, asignas herramientas terapéuticas y marcas sesiones como finalizadas para recibir retroalimentación."}
+                  ? "Panel de control maestro: supervisa citas de todos los especialistas, asigna roles y gestiona usuarios."
+                  : `Hola ${nombreActivo}, aquí gestionas tus sesiones clínicas con tus pacientes, asignas tareas terapéuticas y programas tu disponibilidad.`}
               </p>
             </div>
 
             <div className="flex flex-wrap items-center gap-2.5">
+              <button
+                onClick={() => setMostrarModalDisponibilidad(true)}
+                className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-extrabold text-xs sm:text-sm border border-white/20 transition cursor-pointer shrink-0"
+              >
+                <Settings className="w-4 h-4 text-[#9DBEBB]" />
+                <span>Mis Horarios (Selia)</span>
+              </button>
+
               {esSuperAdmin && (
                 <>
                   <button
@@ -817,7 +1017,7 @@ function AdminContent() {
           <div className="space-y-4">
             {/* Filtros de Citas */}
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-semibold text-[#031926]/70">Filtrar:</span>
                 {["todas", "pendientes", "confirmadas", "finalizadas"].map((filtro) => (
                   <button
@@ -832,6 +1032,24 @@ function AdminContent() {
                     {filtro}
                   </button>
                 ))}
+
+                {esSuperAdmin && psicologasRegistradas.length > 0 && (
+                  <div className="flex items-center gap-1.5 sm:ml-2">
+                    <span className="text-xs font-semibold text-[#031926]/70">Especialista:</span>
+                    <select
+                      value={filtroPsicologo}
+                      onChange={(e) => setFiltroPsicologo(e.target.value)}
+                      className="px-2.5 py-1.5 rounded-xl text-xs font-semibold bg-white border border-[#9DBEBB]/60 text-[#031926] cursor-pointer"
+                    >
+                      <option value="todos">Todos los Especialistas</option>
+                      {psicologasRegistradas.map((psi) => (
+                        <option key={psi.id} value={psi.id}>
+                          {psi.nombre_completo || psi.email}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               <span className="text-xs text-[#031926]/60">
@@ -906,7 +1124,18 @@ function AdminContent() {
 
                       {/* Datos del Paciente */}
                       <div className="p-3.5 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/30">
-                        <p className="text-xs font-semibold text-[#468189]">Consultante:</p>
+                        <div className="flex items-center justify-between">
+                          <p className="text-xs font-semibold text-[#468189]">Consultante:</p>
+                          {cita.psicologo ? (
+                            <span className="text-[10px] font-bold text-[#468189] bg-[#9DBEBB]/20 px-2 py-0.5 rounded-md border border-[#77ACA2]/30 flex items-center gap-1">
+                              <span>🩺</span> {cita.psicologo.nombre_completo || cita.psicologo.email}
+                            </span>
+                          ) : (
+                            <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
+                              Especialista: {nombreActivo}
+                            </span>
+                          )}
+                        </div>
                         <h4 className="text-sm font-bold text-[#031926] mt-0.5">
                           {cita.paciente?.nombre_completo || "Paciente sin nombre registrado"}
                         </h4>
@@ -944,25 +1173,32 @@ function AdminContent() {
                         </div>
                       )}
 
-                      {/* Enlace de reunión virtual */}
+                      {/* Enlace de reunión virtual con Google Meet */}
                       {cita.modalidad === "virtual" && (
-                        <div className="flex items-center gap-2 pt-1">
+                        <div className="flex flex-wrap items-center gap-2 pt-1">
                           {cita.enlace_reunion ? (
                             <a
                               href={cita.enlace_reunion}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="flex-1 inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-[#468189] text-white text-xs font-semibold hover:bg-[#031926] transition"
+                              className="flex-1 inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition shadow-xs"
                             >
-                              <Video className="w-3.5 h-3.5" />
-                              Abrir Videollamada
+                              <Video className="w-4 h-4 text-emerald-100" />
+                              <span>Unirse a Google Meet</span>
+                              <ExternalLink className="w-3 h-3 opacity-80" />
                             </a>
                           ) : (
-                            <span className="text-xs text-[#031926]/50 italic">
-                              Sin enlace asignado
-                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleGenerarMeet(cita.id)}
+                              className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition cursor-pointer"
+                            >
+                              <Video className="w-4 h-4" />
+                              <span>Generar Google Meet</span>
+                            </button>
                           )}
                           <button
+                            type="button"
                             onClick={() => {
                               setCitaParaEditar(cita);
                               setNuevoEnlace(cita.enlace_reunion || "");
@@ -974,31 +1210,47 @@ function AdminContent() {
                         </div>
                       )}
 
-                      {/* Botón de Acción Clave: Finalizar Cita para habilitar 1 a 5 estrellas */}
-                      <div className="pt-2 border-t border-[#9DBEBB]/30 flex items-center justify-between gap-2">
+                      {/* Botones de Acción: Reprogramar y Finalizar */}
+                      <div className="pt-2 border-t border-[#9DBEBB]/30 flex flex-wrap items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setCitaParaReprogramar(cita);
+                            const d = new Date(cita.fecha_hora);
+                            setReprogramarFecha(d.toISOString().split("T")[0]);
+                            setReprogramarHora(d.toTimeString().slice(0, 5));
+                            setReprogramarEstado(cita.estado);
+                            setReprogramarEnlace(cita.enlace_reunion || "");
+                          }}
+                          className="py-2 px-3 rounded-xl border border-[#9DBEBB]/60 text-xs font-semibold text-[#031926] hover:bg-[#FBF8F1] transition cursor-pointer flex items-center gap-1.5"
+                        >
+                          <RefreshCw className="w-3.5 h-3.5 text-[#468189]" />
+                          <span>Reprogramar / Editar</span>
+                        </button>
+
                         {esFinalizada ? (
-                          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 w-full justify-center">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
                             <Check className="w-4 h-4 text-emerald-600" />
-                            <span>Servicio Finalizado (Calificación Habilitada)</span>
+                            <span>Servicio Finalizado</span>
                           </div>
                         ) : (
-                          <>
+                          <div className="flex items-center gap-2">
                             {cita.estado !== "confirmada" && (
                               <button
                                 onClick={() => handleCambiarEstadoCita(cita.id, "confirmada")}
-                                className="w-1/2 py-2 px-3 rounded-xl border border-[#468189] text-[#468189] hover:bg-[#468189] hover:text-white font-semibold text-xs transition cursor-pointer"
+                                className="py-2 px-3 rounded-xl border border-[#468189] text-[#468189] hover:bg-[#468189] hover:text-white font-semibold text-xs transition cursor-pointer"
                               >
-                                Confirmar Cita
+                                Confirmar
                               </button>
                             )}
                             <button
                               onClick={() => handleCambiarEstadoCita(cita.id, "finalizado")}
-                              className="flex-1 py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-bold text-xs shadow-md shadow-emerald-200 hover:brightness-105 transition cursor-pointer flex items-center justify-center gap-1.5"
+                              className="py-2 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-700 text-white font-bold text-xs shadow-md shadow-emerald-200 hover:brightness-105 transition cursor-pointer flex items-center gap-1.5"
                             >
                               <CheckCircle2 className="w-4 h-4" />
-                              <span>Marcar Finalizada</span>
+                              <span>Finalizar</span>
                             </button>
-                          </>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -1070,16 +1322,28 @@ function AdminContent() {
                           </div>
                         </div>
 
-                        <button
-                          onClick={() => {
-                            setPacienteSeleccionado(p.id);
-                            setMostrarModalTarea(true);
-                          }}
-                          className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-white border border-[#468189]/50 text-[#468189] hover:bg-[#468189] hover:text-white text-xs font-semibold transition cursor-pointer"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          <span>Asignar Tarea</span>
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => {
+                              setPacienteSeleccionado(p.id);
+                              setMostrarModalTarea(true);
+                            }}
+                            className="flex-1 inline-flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl bg-white border border-[#468189]/50 text-[#468189] hover:bg-[#468189] hover:text-white text-xs font-semibold transition cursor-pointer"
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                            <span>Asignar Tarea</span>
+                          </button>
+                          {esSuperAdmin && p.email.toLowerCase() !== "brayancamilo2407@gmail.com" && (
+                            <button
+                              type="button"
+                              onClick={() => handleEliminarUsuario(p.id, p.nombre_completo || p.email)}
+                              className="p-2 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs transition cursor-pointer shrink-0"
+                              title="Eliminar consultante"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </div>
                     );
                   })}
@@ -1364,7 +1628,7 @@ function AdminContent() {
                               </span>
                             </div>
 
-                            <div className="shrink-0">
+                            <div className="shrink-0 flex items-center gap-2">
                               <select
                                 value={p.rol || "paciente"}
                                 disabled={esEsteSuperAdmin}
@@ -1380,6 +1644,18 @@ function AdminContent() {
                                 <option value="psicologo">🩺 Psicóloga / Especialista</option>
                                 <option value="admin">👑 Administrador</option>
                               </select>
+
+                              {!esEsteSuperAdmin && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleEliminarUsuario(p.id, p.nombre_completo || p.email)}
+                                  className="p-2 sm:p-2.5 rounded-xl border border-rose-200 text-rose-600 hover:bg-rose-50 text-xs font-bold transition cursor-pointer flex items-center gap-1.5 shadow-xs"
+                                  title="Eliminar usuario permanentemente"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                  <span className="hidden sm:inline">Eliminar</span>
+                                </button>
+                              )}
                             </div>
                           </div>
                         </div>
@@ -1866,6 +2142,261 @@ function AdminContent() {
                   className="w-1/2 py-2.5 rounded-xl bg-[#468189] hover:bg-[#031926] text-white font-semibold text-xs shadow-md shadow-[#468189]/20 transition cursor-pointer"
                 >
                   Guardar Enlace
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: REPROGRAMAR / EDITAR CITA */}
+      {citaParaReprogramar && (
+        <div className="fixed inset-0 z-50 bg-[#031926]/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl border border-[#9DBEBB]/40 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#9DBEBB]/30">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[#9DBEBB]/20 text-[#468189] flex items-center justify-center">
+                  <RefreshCw className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#031926]">
+                    Reprogramar / Gestionar Cita
+                  </h3>
+                  <p className="text-xs text-[#031926]/70">
+                    Consultante: {citaParaReprogramar.paciente?.nombre_completo || citaParaReprogramar.paciente?.email || "Paciente"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCitaParaReprogramar(null)}
+                className="text-gray-400 hover:text-[#031926] p-1 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleGuardarReprogramacion} className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#031926] mb-1">
+                    Nueva Fecha
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={reprogramarFecha}
+                    onChange={(e) => setReprogramarFecha(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#031926] mb-1">
+                    Nueva Hora
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={reprogramarHora}
+                    onChange={(e) => setReprogramarHora(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#031926] mb-1">
+                  Estado de la Cita
+                </label>
+                <select
+                  value={reprogramarEstado}
+                  onChange={(e) => setReprogramarEstado(e.target.value)}
+                  className="w-full p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189] bg-white"
+                >
+                  <option value="pendiente">Pendiente</option>
+                  <option value="confirmada">Confirmada</option>
+                  <option value="finalizado">Finalizada (Habilitar Calificación)</option>
+                  <option value="cancelada">Cancelada</option>
+                </select>
+              </div>
+
+              {citaParaReprogramar.modalidad === "virtual" && (
+                <div>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="block text-xs font-semibold text-[#031926]">
+                      Enlace Google Meet
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const randomMeet = `https://meet.google.com/${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 5)}`;
+                        setReprogramarEnlace(randomMeet);
+                      }}
+                      className="text-[11px] font-bold text-[#468189] hover:underline flex items-center gap-1 cursor-pointer"
+                    >
+                      <Sparkles className="w-3 h-3 text-amber-500" />
+                      Generar Nuevo Meet
+                    </button>
+                  </div>
+                  <input
+                    type="url"
+                    value={reprogramarEnlace}
+                    onChange={(e) => setReprogramarEnlace(e.target.value)}
+                    placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                    className="w-full p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
+                  />
+                </div>
+              )}
+
+              <div className="flex gap-2 pt-2 border-t border-[#9DBEBB]/30">
+                <button
+                  type="button"
+                  onClick={() => setCitaParaReprogramar(null)}
+                  className="w-1/2 py-2.5 rounded-xl border border-[#9DBEBB]/60 text-[#031926]/70 font-semibold text-xs hover:bg-[#FBF8F1] transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={guardandoReprogramacion}
+                  className="w-1/2 py-2.5 rounded-xl bg-[#468189] hover:bg-[#031926] text-white font-semibold text-xs shadow-md transition cursor-pointer disabled:opacity-60"
+                >
+                  {guardandoReprogramacion ? "Guardando..." : "Guardar Cambios"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: CONFIGURAR HORARIOS Y DISPONIBILIDAD (ESTILO SELIA) */}
+      {mostrarModalDisponibilidad && (
+        <div className="fixed inset-0 z-50 bg-[#031926]/50 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl border border-[#9DBEBB]/40 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#9DBEBB]/30">
+              <div className="flex items-center gap-2.5">
+                <div className="w-9 h-9 rounded-xl bg-[#F4E9CD] text-[#031926] flex items-center justify-center">
+                  <CalendarDays className="w-5 h-5 text-[#468189]" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#031926]">
+                    Mis Horarios y Disponibilidad (Estilo Selia)
+                  </h3>
+                  <p className="text-xs text-[#031926]/70">
+                    Define tus días laborales y franja horaria para las reservas de tus pacientes.
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setMostrarModalDisponibilidad(false)}
+                className="text-gray-400 hover:text-[#031926] p-1 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleGuardarDisponibilidad} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[#031926] mb-2">
+                  Días de Atención Semanal
+                </label>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {[
+                    { id: "lunes", label: "Lunes" },
+                    { id: "martes", label: "Martes" },
+                    { id: "miercoles", label: "Miércoles" },
+                    { id: "jueves", label: "Jueves" },
+                    { id: "viernes", label: "Viernes" },
+                    { id: "sabado", label: "Sábado" },
+                  ].map((dia) => {
+                    const activo = diasLaborales.includes(dia.id);
+                    return (
+                      <button
+                        key={dia.id}
+                        type="button"
+                        onClick={() => {
+                          if (activo) {
+                            setDiasLaborales(diasLaborales.filter((d) => d !== dia.id));
+                          } else {
+                            setDiasLaborales([...diasLaborales, dia.id]);
+                          }
+                        }}
+                        className={`p-2.5 rounded-xl border text-xs font-semibold flex items-center justify-between cursor-pointer transition ${
+                          activo
+                            ? "bg-[#468189] text-white border-[#468189]"
+                            : "bg-white text-[#031926]/70 border-[#9DBEBB]/50 hover:bg-[#FBF8F1]"
+                        }`}
+                      >
+                        <span>{dia.label}</span>
+                        {activo && <Check className="w-3.5 h-3.5" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-[#031926] mb-1">
+                    Hora Inicio
+                  </label>
+                  <input
+                    type="time"
+                    value={horaInicioLab}
+                    onChange={(e) => setHoraInicioLab(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-[#031926] mb-1">
+                    Hora Fin
+                  </label>
+                  <input
+                    type="time"
+                    value={horaFinLab}
+                    onChange={(e) => setHoraFinLab(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#031926] mb-1">
+                  Duración de cada sesión
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[45, 50, 60].map((dur) => (
+                    <button
+                      key={dur}
+                      type="button"
+                      onClick={() => setDuracionLab(dur)}
+                      className={`p-2 rounded-xl border text-xs font-bold transition cursor-pointer ${
+                        duracionLab === dur
+                          ? "bg-[#031926] text-white border-[#031926]"
+                          : "bg-white text-[#031926]/70 border-[#9DBEBB]/50"
+                      }`}
+                    >
+                      {dur} minutos
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2 border-t border-[#9DBEBB]/30">
+                <button
+                  type="button"
+                  onClick={() => setMostrarModalDisponibilidad(false)}
+                  className="w-1/2 py-2.5 rounded-xl border border-[#9DBEBB]/60 text-[#031926]/70 font-semibold text-xs hover:bg-[#FBF8F1] transition cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={guardandoDisponibilidad}
+                  className="w-1/2 py-2.5 rounded-xl bg-[#468189] hover:bg-[#031926] text-white font-semibold text-xs shadow-md transition cursor-pointer disabled:opacity-60"
+                >
+                  {guardandoDisponibilidad ? "Guardando..." : "Guardar Disponibilidad"}
                 </button>
               </div>
             </form>

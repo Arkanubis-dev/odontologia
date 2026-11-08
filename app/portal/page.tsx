@@ -19,17 +19,27 @@ import {
   Sparkles,
   ShieldCheck,
   Send,
-  Star
+  Star,
+  ExternalLink
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import CalendarioSelia, { PsicologoInfo } from "@/components/CalendarioSelia";
 
 interface Cita {
   id: string;
+  paciente_id?: string;
+  psicologo_id?: string;
   fecha_hora: string;
   modalidad: "virtual" | "presencial";
   enlace_reunion?: string;
   estado: "pendiente" | "confirmada" | "completada" | "cancelada" | "finalizado";
   notas_paciente?: string;
+  psicologo?: {
+    id: string;
+    nombre_completo?: string;
+    email: string;
+    avatar_url?: string;
+  };
 }
 
 interface Tarea {
@@ -94,6 +104,9 @@ function PortalContent() {
   const [fechaCita, setFechaCita] = useState("");
   const [modalidadCita, setModalidadCita] = useState<"virtual" | "presencial">("virtual");
   const [motivoCita, setMotivoCita] = useState("");
+  const [guardandoCita, setGuardandoCita] = useState(false);
+  const [psicologoSeleccionadoId, setPsicologoSeleccionadoId] = useState<string>("");
+  const [psicologos, setPsicologos] = useState<PsicologoInfo[]>([]);
 
   // Cargar usuario y datos
   useEffect(() => {
@@ -161,8 +174,52 @@ function PortalContent() {
           setCalificaciones(map);
         }
 
+        // Cargar lista de psicólogas disponibles
+        let psicosList: PsicologoInfo[] = [];
+        try {
+          const { data: psicosData } = await supabase
+            .from("perfiles")
+            .select("id, nombre_completo, email, avatar_url")
+            .eq("rol", "psicologo");
+
+          if (psicosData && psicosData.length > 0) {
+            psicosList = psicosData.map((p: any) => ({
+              id: p.id,
+              nombre_completo: p.nombre_completo || p.email.split("@")[0],
+              email: p.email,
+              avatar_url: p.avatar_url,
+              especialidad: "Psicóloga Clínica y Terapéutica",
+            }));
+          }
+        } catch {}
+
+        if (psicosList.length === 0) {
+          psicosList = [
+            {
+              id: "alejandra-default",
+              nombre_completo: "Alejandra Bedoya",
+              email: "alejandra.psicologia@gmail.com",
+              avatar_url: "/alejandra-bedoya.jpg",
+              especialidad: "Psicóloga Terapéutica & Laboral",
+            },
+          ];
+        }
+
+        setPsicologos(psicosList);
+        setPsicologoSeleccionadoId(psicosList[0].id);
+
+        const mapaPsico: Record<string, any> = {};
+        psicosList.forEach((p) => {
+          mapaPsico[p.id] = p;
+        });
+
         if (citasRes.data && citasRes.data.length > 0) {
-          setCitas(citasRes.data);
+          setCitas(
+            citasRes.data.map((c: any) => ({
+              ...c,
+              psicologo: mapaPsico[c.psicologo_id] || psicosList[0],
+            }))
+          );
         } else {
           // Si es usuario nuevo sin citas, poner ejemplo
           setCitas([
@@ -173,6 +230,7 @@ function PortalContent() {
               enlace_reunion: "https://meet.google.com/psicologia-sesion",
               estado: "confirmada",
               notas_paciente: "Sesión de seguimiento terapéutico",
+              psicologo: psicosList[0],
             },
           ]);
         }
@@ -342,32 +400,54 @@ function PortalContent() {
   // Solicitar nueva cita
   const handleCrearCita = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!fechaCita) return;
+    if (!fechaCita) {
+      alert("Por favor selecciona un día y una hora disponible en el calendario.");
+      return;
+    }
 
-    const nueva: Cita = {
-      id: "cita-" + Date.now(),
-      fecha_hora: new Date(fechaCita).toISOString(),
-      modalidad: modalidadCita,
-      estado: "pendiente",
-      notas_paciente: motivoCita,
-    };
+    setGuardandoCita(true);
 
-    setCitas([...citas, nueva]);
-    setMostrarModalCita(false);
-    setFechaCita("");
-    setMotivoCita("");
-
-    if (!isDemo && user?.id) {
-      const supabase = createClient();
-      if (supabase) {
-        await supabase.from("citas").insert({
-          paciente_id: user.id,
-          fecha_hora: nueva.fecha_hora,
-          modalidad: nueva.modalidad,
-          estado: "pendiente",
-          notas_paciente: nueva.notas_paciente,
+    try {
+      if (isDemo) {
+        const nueva: Cita = {
+          id: "cita-" + Date.now(),
+          fecha_hora: fechaCita,
+          modalidad: modalidadCita,
+          enlace_reunion: modalidadCita === "virtual" ? "https://meet.google.com/psico-consulta" : undefined,
+          estado: "confirmada",
+          notas_paciente: motivoCita,
+          psicologo_id: psicologoSeleccionadoId,
+          psicologo: psicologos.find((p) => p.id === psicologoSeleccionadoId),
+        };
+        setCitas([nueva, ...citas]);
+      } else if (user?.id) {
+        const res = await fetch("/api/citas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            paciente_id: user.id,
+            fecha_hora: fechaCita,
+            modalidad: modalidadCita,
+            notas_paciente: motivoCita,
+            psicologo_id: psicologoSeleccionadoId || undefined,
+          }),
         });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "No se pudo agendar la cita");
+
+        const psicoObj = psicologos.find((p) => p.id === psicologoSeleccionadoId) || psicologos[0];
+        setCitas([{ ...data.cita, psicologo: psicoObj }, ...citas]);
       }
+
+      setMostrarModalCita(false);
+      setFechaCita("");
+      setMotivoCita("");
+      alert("¡Cita agendada exitosamente! Tu especialista ya puede verla y prepararse para la sesión.");
+    } catch (err: any) {
+      alert("Error al agendar cita: " + err.message);
+    } finally {
+      setGuardandoCita(false);
     }
   };
 
@@ -615,15 +695,25 @@ function PortalContent() {
                         {horaFormateada}
                       </p>
 
-                      {/* Especialista Asignada */}
+                      {/* Especialista Asignado */}
                       <div className="flex items-center gap-2.5 py-2 px-3 rounded-xl bg-[#FBF8F1] border border-[#9DBEBB]/30 mb-3">
-                        <img
-                          src="/alejandra-bedoya.jpg"
-                          alt="Alejandra Bedoya"
-                          className="w-8 h-8 rounded-full object-cover object-top border border-[#77ACA2]/50 shrink-0"
-                        />
+                        <div className="w-8 h-8 rounded-full bg-[#031926] text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden border border-[#77ACA2]/50">
+                          {cita.psicologo?.avatar_url ? (
+                            <img src={cita.psicologo.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (cita.psicologo?.email?.toLowerCase().includes("alejandra") || !cita.psicologo) ? (
+                            <img
+                              src="/alejandra-bedoya.jpg"
+                              alt="Alejandra Bedoya"
+                              className="w-full h-full object-cover object-top"
+                            />
+                          ) : (
+                            <span>{(cita.psicologo?.nombre_completo || cita.psicologo?.email || "P").charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
                         <div>
-                          <p className="text-xs font-bold text-[#031926]">Alejandra Bedoya</p>
+                          <p className="text-xs font-bold text-[#031926]">
+                            {cita.psicologo?.nombre_completo || (cita.psicologo?.email?.toLowerCase().includes("alyson") ? "Alyson López" : "Alejandra Bedoya")}
+                          </p>
                           <p className="text-[10px] text-[#468189] font-medium">Especialista en Psicología</p>
                         </div>
                       </div>
@@ -634,15 +724,17 @@ function PortalContent() {
                         </p>
                       )}
 
+                      {/* Botón de Google Meet para sesión virtual */}
                       {cita.modalidad === "virtual" && cita.enlace_reunion && (
                         <a
                           href={cita.enlace_reunion}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-[#468189] hover:bg-[#031926] text-white font-semibold text-xs transition mb-3"
+                          className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition mb-3"
                         >
-                          <Video className="w-4 h-4" />
-                          Unirse a la Sesión Virtual
+                          <Video className="w-4 h-4 text-emerald-100" />
+                          <span>Unirse a Google Meet</span>
+                          <ExternalLink className="w-3.5 h-3.5 opacity-80" />
                         </a>
                       )}
 
@@ -926,87 +1018,103 @@ function PortalContent() {
         )}
       </main>
 
-      {/* Modal: Solicitar Cita */}
+      {/* Modal: Solicitar Cita con Calendario Selia */}
       {mostrarModalCita && (
-        <div className="fixed inset-0 z-50 bg-[#031926]/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-[#9DBEBB]/40">
-            <h3 className="text-lg font-bold text-[#031926] mb-1">Agendar Sesión con Alejandra</h3>
-            <p className="text-xs text-[#031926]/70 mb-4">
-              Selecciona fecha, hora y modalidad de tu preferencia.
-            </p>
-
-            <form onSubmit={handleCrearCita} className="space-y-4">
+        <div className="fixed inset-0 z-50 bg-[#031926]/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-[#9DBEBB]/40 my-8">
+            <div className="flex items-start justify-between pb-4 border-b border-[#9DBEBB]/30 mb-6">
               <div>
-                <label className="block text-xs font-semibold text-[#031926] mb-1">
-                  Fecha y Hora
-                </label>
-                <input
-                  type="datetime-local"
-                  required
-                  value={fechaCita}
-                  onChange={(e) => setFechaCita(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
-                />
+                <span className="inline-block px-3 py-1 bg-[#9DBEBB]/25 text-[#468189] text-[11px] font-extrabold uppercase tracking-wider rounded-full mb-1">
+                  Reserva en Tiempo Real (Estilo Selia)
+                </span>
+                <h3 className="text-xl font-black text-[#031926]">
+                  Agendar Sesión de Consulta
+                </h3>
+                <p className="text-xs text-[#031926]/70 mt-0.5">
+                  Selecciona a tu profesional, el día en el calendario y el horario disponible que mejor se ajuste a tu tiempo.
+                </p>
               </div>
+              <button
+                type="button"
+                onClick={() => setMostrarModalCita(false)}
+                className="text-gray-400 hover:text-[#031926] p-1.5 cursor-pointer rounded-xl hover:bg-gray-100"
+              >
+                ✕
+              </button>
+            </div>
 
+            <form onSubmit={handleCrearCita} className="space-y-6">
+              {/* Calendario Selia con selector de profesional y slots */}
+              <CalendarioSelia
+                psicologos={psicologos}
+                psicologoSeleccionadoId={psicologoSeleccionadoId}
+                onCambiarPsicologo={(id) => setPsicologoSeleccionadoId(id)}
+                citasExistentes={citas}
+                fechaHoraSeleccionada={fechaCita}
+                onSeleccionarFechaHora={(iso) => setFechaCita(iso)}
+              />
+
+              {/* Modalidad de la sesión */}
               <div>
-                <label className="block text-xs font-semibold text-[#031926] mb-1">
-                  Modalidad
+                <label className="block text-xs font-bold text-[#031926] mb-2 uppercase tracking-wider">
+                  Modalidad de Atención
                 </label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   <button
                     type="button"
                     onClick={() => setModalidadCita("virtual")}
-                    className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer ${
+                    className={`py-3 px-4 rounded-xl border text-xs font-bold flex items-center justify-center gap-2.5 cursor-pointer transition ${
                       modalidadCita === "virtual"
-                        ? "bg-[#9DBEBB]/25 border-[#468189] text-[#031926]"
-                        : "border-[#9DBEBB]/40 text-[#031926]/70"
+                        ? "bg-[#468189] text-white border-[#468189] shadow-sm"
+                        : "border-[#9DBEBB]/50 text-[#031926]/75 hover:bg-[#FBF8F1]"
                     }`}
                   >
-                    <Video className="w-3.5 h-3.5 text-[#468189]" />
-                    Virtual (Meet)
+                    <Video className="w-4 h-4" />
+                    <span>Virtual (Google Meet Automático)</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setModalidadCita("presencial")}
-                    className={`py-2 px-3 rounded-xl border text-xs font-semibold flex items-center justify-center gap-2 cursor-pointer ${
+                    className={`py-3 px-4 rounded-xl border text-xs font-bold flex items-center justify-center gap-2.5 cursor-pointer transition ${
                       modalidadCita === "presencial"
-                        ? "bg-[#9DBEBB]/25 border-[#468189] text-[#031926]"
-                        : "border-[#9DBEBB]/40 text-[#031926]/70"
+                        ? "bg-[#468189] text-white border-[#468189] shadow-sm"
+                        : "border-[#9DBEBB]/50 text-[#031926]/75 hover:bg-[#FBF8F1]"
                     }`}
                   >
-                    <MapPin className="w-3.5 h-3.5 text-[#468189]" />
-                    Presencial
+                    <MapPin className="w-4 h-4" />
+                    <span>Presencial en Consultorio</span>
                   </button>
                 </div>
               </div>
 
+              {/* Motivo de consulta */}
               <div>
-                <label className="block text-xs font-semibold text-[#031926] mb-1">
+                <label className="block text-xs font-bold text-[#031926] mb-1.5 uppercase tracking-wider">
                   Motivo o tema a tratar (Opcional)
                 </label>
                 <textarea
                   rows={2}
                   value={motivoCita}
                   onChange={(e) => setMotivoCita(e.target.value)}
-                  placeholder="Ej: Seguimiento del plan de tratamiento, burnout o consulta prioritaria."
-                  className="w-full p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
+                  placeholder="Ej: Seguimiento del plan de tratamiento, manejo del estrés laboral o consulta prioritaria..."
+                  className="w-full p-3 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
                 />
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-3 pt-3 border-t border-[#9DBEBB]/30">
                 <button
                   type="button"
                   onClick={() => setMostrarModalCita(false)}
-                  className="w-1/2 py-2.5 rounded-xl border border-[#9DBEBB]/60 text-[#031926]/70 font-semibold text-xs hover:bg-[#FBF8F1] transition cursor-pointer"
+                  className="w-1/2 py-3 rounded-xl border border-[#9DBEBB]/60 text-[#031926]/70 font-bold text-xs hover:bg-[#FBF8F1] transition cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="w-1/2 py-2.5 rounded-xl bg-[#468189] hover:bg-[#031926] text-white font-semibold text-xs shadow-md shadow-[#468189]/20 transition cursor-pointer"
+                  disabled={guardandoCita || !fechaCita}
+                  className="w-1/2 py-3 rounded-xl bg-[#031926] hover:bg-[#468189] text-white font-extrabold text-xs shadow-md transition cursor-pointer disabled:opacity-50"
                 >
-                  Confirmar Cita
+                  {guardandoCita ? "Agendando..." : "Confirmar y Agendar Cita"}
                 </button>
               </div>
             </form>
