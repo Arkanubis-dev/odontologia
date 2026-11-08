@@ -1,8 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
+
 const DEFAULT_SUPABASE_URL = "https://sdbvsoklyuuaeaqksjkd.supabase.co";
 const DEFAULT_SUPABASE_ANON_KEY = "sb_publishable_TbhqlbTXXbwf89J1W4SvuQ_lvUG0jvK";
+
+const noCacheHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+};
 
 export async function GET(request: NextRequest) {
   try {
@@ -123,7 +128,10 @@ export async function GET(request: NextRequest) {
 
     const conversaciones = Object.values(contactosMap);
 
-    return NextResponse.json({ success: true, conversaciones, es_superadmin: esSuperAdmin });
+    return NextResponse.json(
+      { success: true, conversaciones, es_superadmin: esSuperAdmin },
+      { headers: noCacheHeaders }
+    );
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Error al obtener conversaciones." },

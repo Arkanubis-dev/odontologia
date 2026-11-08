@@ -408,7 +408,9 @@ function AdminContent() {
     const cargarConversaciones = async () => {
       try {
         const esAdminParam = esSuperAdmin ? "&es_admin=true" : "";
-        const res = await fetch(`/api/chat/conversaciones?usuario_id=${currentUser.id}${esAdminParam}`);
+        const res = await fetch(`/api/chat/conversaciones?usuario_id=${currentUser.id}${esAdminParam}`, {
+          cache: "no-store",
+        });
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data.conversaciones)) {
@@ -438,7 +440,8 @@ function AdminContent() {
       try {
         const esAdminParam = esSuperAdmin ? "&es_admin=true" : "";
         const res = await fetch(
-          `/api/chat/mensajes?usuario_id=${currentUser.id}&contacto_id=${pacienteChatSeleccionado.id}${esAdminParam}`
+          `/api/chat/mensajes?usuario_id=${currentUser.id}&contacto_id=${pacienteChatSeleccionado.id}${esAdminParam}`,
+          { cache: "no-store" }
         );
         if (res.ok) {
           const data = await res.json();
@@ -2590,7 +2593,11 @@ function AdminContent() {
                           {pacienteChatSeleccionado.nombre_completo || pacienteChatSeleccionado.email.split("@")[0]}
                         </h4>
                         <p className="text-[11px] text-[#031926]/60">
-                          Consultante · {pacienteChatSeleccionado.email}
+                          {pacienteChatSeleccionado.rol === "psicologo"
+                            ? "🩺 Psicóloga Especialista"
+                            : pacienteChatSeleccionado.rol === "superadmin"
+                            ? "👑 Super Admin"
+                            : "👤 Consultante"} · {pacienteChatSeleccionado.email}
                         </p>
                       </div>
                     </div>

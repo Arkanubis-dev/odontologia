@@ -1,8 +1,13 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 
+
 const DEFAULT_SUPABASE_URL = "https://sdbvsoklyuuaeaqksjkd.supabase.co";
 const DEFAULT_SUPABASE_ANON_KEY = "sb_publishable_TbhqlbTXXbwf89J1W4SvuQ_lvUG0jvK";
+
+const noCacheHeaders = {
+  "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate",
+};
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const DEFAULT_PSICOLOGO_UUID = "14e6b3b4-3202-4620-9eb9-a9f905e635d0"; // Alyson López
@@ -71,7 +76,7 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error("Error al consultar mensajes:", error);
-      return NextResponse.json({ success: true, mensajes: [] });
+      return NextResponse.json({ success: true, mensajes: [] }, { headers: noCacheHeaders });
     }
 
     // Marcar como leídos los mensajes dirigidos al usuario actual
@@ -83,7 +88,7 @@ export async function GET(request: NextRequest) {
       await client.from("mensajes").update({ leido: true }).in("id", ids);
     }
 
-    return NextResponse.json({ success: true, mensajes: mensajes || [] });
+    return NextResponse.json({ success: true, mensajes: mensajes || [] }, { headers: noCacheHeaders });
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Error al obtener mensajes." },

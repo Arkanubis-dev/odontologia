@@ -99,7 +99,7 @@ export default function ChatFlotante({
 
     async function verificarPresencia() {
       try {
-        const res = await fetch(`/api/chat/presencia?usuario_id=${especialistaId}`);
+        const res = await fetch(`/api/chat/presencia?usuario_id=${especialistaId}`, { cache: "no-store" });
         if (res.ok) {
           const data = await res.json();
           setEnLinea(Boolean(data.en_linea));
@@ -119,7 +119,8 @@ export default function ChatFlotante({
     async function cargarMensajes() {
       try {
         const res = await fetch(
-          `/api/chat/mensajes?usuario_id=${usuarioActual.id}&contacto_id=${especialistaId}`
+          `/api/chat/mensajes?usuario_id=${usuarioActual.id}&contacto_id=${especialistaId}`,
+          { cache: "no-store" }
         );
         if (res.ok) {
           const data = await res.json();
