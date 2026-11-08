@@ -82,6 +82,12 @@ export default function ChatFlotante({ usuarioActual, especialista }: ChatFlotan
           const data = await res.json();
           if (Array.isArray(data.mensajes)) {
             setMensajes(data.mensajes);
+            if (!abierto) {
+              const entrantes = data.mensajes.filter(
+                (m: any) => m.destinatario_id === usuarioActual.id && !m.leido
+              );
+              setNoLeidos(entrantes.length);
+            }
           }
         }
       } catch {}
@@ -89,13 +95,9 @@ export default function ChatFlotante({ usuarioActual, especialista }: ChatFlotan
 
     cargarMensajes();
 
-    // Polling cada 3.5 segundos cuando el chat está abierto
-    let interval: any = null;
-    if (abierto) {
-      interval = setInterval(cargarMensajes, 3500);
-    } else {
-      interval = setInterval(cargarMensajes, 12000);
-    }
+    // Polling en tiempo real: 2 segundos cuando está abierto, 3.5 segundos cuando está cerrado
+    const intervalMs = abierto ? 2000 : 3500;
+    const interval = setInterval(cargarMensajes, intervalMs);
 
     return () => clearInterval(interval);
   }, [usuarioActual?.id, especialistaId, abierto]);
@@ -346,3 +348,4 @@ export default function ChatFlotante({ usuarioActual, especialista }: ChatFlotan
     </div>
   );
 }
+

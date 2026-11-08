@@ -125,6 +125,7 @@ function AdminContent() {
   // Estados para Messenger / Chat en Panel de Psicóloga
   const [pacienteChatSeleccionado, setPacienteChatSeleccionado] = useState<Perfil | null>(null);
   const [mensajesChat, setMensajesChat] = useState<any[]>([]);
+  const [conversacionesChat, setConversacionesChat] = useState<any[]>([]);
   const [textoMensajeChat, setTextoMensajeChat] = useState("");
   const [enviandoMensajeChat, setEnviandoMensajeChat] = useState(false);
   const [busquedaChat, setBusquedaChat] = useState("");
@@ -400,7 +401,35 @@ function AdminContent() {
     return () => clearInterval(interval);
   }, [currentUser?.id, esSuperAdmin, esPsicologa]);
 
-  // Cargar mensajes en tiempo real cuando se selecciona un paciente
+  // Cargar lista de conversaciones activas e historial
+  useEffect(() => {
+    if (!currentUser?.id) return;
+
+    const cargarConversaciones = async () => {
+      try {
+        const res = await fetch(`/api/chat/conversaciones?usuario_id=${currentUser.id}`);
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.conversaciones)) {
+            setConversacionesChat(data.conversaciones);
+            // Si no hay paciente seleccionado, auto-seleccionar el que tenga mensaje más reciente
+            setPacienteChatSeleccionado((actual) => {
+              if (!actual && data.conversaciones.length > 0) {
+                return data.conversaciones[0].contacto;
+              }
+              return actual;
+            });
+          }
+        }
+      } catch {}
+    };
+
+    cargarConversaciones();
+    const interval = setInterval(cargarConversaciones, 2500);
+    return () => clearInterval(interval);
+  }, [currentUser?.id]);
+
+  // Cargar mensajes en tiempo real cuando se selecciona un paciente (polling rápido cada 2s)
   useEffect(() => {
     if (!pacienteChatSeleccionado?.id || !currentUser?.id) return;
 
@@ -419,7 +448,7 @@ function AdminContent() {
     };
 
     cargarMensajesAdmin();
-    const interval = setInterval(cargarMensajesAdmin, 3500);
+    const interval = setInterval(cargarMensajesAdmin, 2000);
     return () => clearInterval(interval);
   }, [pacienteChatSeleccionado?.id, currentUser?.id]);
 
@@ -1192,6 +1221,11 @@ function AdminContent() {
           >
             <MessageSquare className="w-4 h-4 text-sky-400" />
             <span>Messenger / Chat</span>
+            {conversacionesChat.reduce((acc, c) => acc + (c.no_leidos || 0), 0) > 0 && (
+              <span className="px-1.5 py-0.5 rounded-full bg-rose-500 text-white font-extrabold text-[10px] animate-pulse">
+                {conversacionesChat.reduce((acc, c) => acc + (c.no_leidos || 0), 0)}
+              </span>
+            )}
           </button>
 
           {esSuperAdmin && (
@@ -2432,8 +2466,68 @@ function AdminContent() {
               </div>
 
               <div className="flex-1 overflow-y-auto divide-y divide-[#9DBEBB]/20">
+                {/* 1. Conversaciones con mensajes previos */}
+                {conversacionesChat
+                  .filter((conv) => {
+                    const c = conv.contacto;
+                    if (!c) return false;
+                    return busquedaChat
+                      ? (c.nombre_completo || "").toLowerCase().includes(busquedaChat.toLowerCase()) ||
+                        (c.email || "").toLowerCase().includes(busquedaChat.toLowerCase())
+                      : true;
+                  })
+                  .map((conv) => {
+                    const c = conv.contacto;
+                    const seleccionado = pacienteChatSeleccionado?.id === c.id;
+                    const horaUltimo = conv.ultimo_mensaje?.creado_en
+                      ? new Date(conv.ultimo_mensaje.creado_en).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })
+                      : "";
+
+                    return (
+                      <button
+                        key={c.id}
+                        onClick={() => setPacienteChatSeleccionado(c)}
+                        className={`w-full text-left p-3.5 flex items-center gap-3 transition cursor-pointer ${
+                          seleccionado
+                            ? "bg-[#468189]/15 border-l-4 border-[#468189]"
+                            : "hover:bg-white/60"
+                        }`}
+                      >
+                        <div className="relative shrink-0">
+                          <div className="w-10 h-10 rounded-2xl bg-[#031926] text-white flex items-center justify-center font-bold text-xs shadow-xs">
+                            {(c.nombre_completo || c.email || "U").charAt(0).toUpperCase()}
+                          </div>
+                          {conv.no_leidos > 0 && (
+                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white font-extrabold text-[9px] flex items-center justify-center shadow-xs animate-bounce">
+                              {conv.no_leidos}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-1">
+                            <span className="text-xs font-bold text-[#031926] truncate block">
+                              {c.nombre_completo || c.email?.split("@")[0]}
+                            </span>
+                            <span className="text-[10px] text-gray-400 shrink-0">
+                              {horaUltimo}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[#468189] font-medium truncate mt-0.5">
+                            {conv.ultimo_mensaje?.contenido || c.email}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+
+                {/* 2. Otros usuarios registrados sin mensajes previos */}
                 {pacientes
-                  .filter((p) => p.rol !== "psicologo")
+                  .filter((p) => p.id !== currentUser?.id)
+                  .filter((p) => !conversacionesChat.some((c) => c.contacto?.id === p.id))
                   .filter((p) =>
                     busquedaChat
                       ? (p.nombre_completo || "").toLowerCase().includes(busquedaChat.toLowerCase()) ||
@@ -2449,10 +2543,10 @@ function AdminContent() {
                         className={`w-full text-left p-3.5 flex items-center gap-3 transition cursor-pointer ${
                           seleccionado
                             ? "bg-[#468189]/15 border-l-4 border-[#468189]"
-                            : "hover:bg-white/60"
+                            : "hover:bg-white/60 opacity-80"
                         }`}
                       >
-                        <div className="w-10 h-10 rounded-2xl bg-[#031926] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                        <div className="w-10 h-10 rounded-2xl bg-[#77ACA2]/40 text-[#031926] flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
                           {(p.nombre_completo || p.email).charAt(0).toUpperCase()}
                         </div>
                         <div className="flex-1 min-w-0">
@@ -2460,8 +2554,11 @@ function AdminContent() {
                             <span className="text-xs font-bold text-[#031926] truncate block">
                               {p.nombre_completo || p.email.split("@")[0]}
                             </span>
+                            <span className="text-[9px] uppercase px-1.5 py-0.2 rounded-md bg-[#9DBEBB]/30 text-[#031926]/70">
+                              {p.rol}
+                            </span>
                           </div>
-                          <p className="text-[11px] text-[#031926]/60 truncate mt-0.5">
+                          <p className="text-[11px] text-[#031926]/50 truncate mt-0.5">
                             {p.email}
                           </p>
                         </div>
