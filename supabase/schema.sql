@@ -107,6 +107,11 @@ create policy "Los usuarios pueden actualizar su propio perfil"
   on public.perfiles for update
   using (auth.uid() = id or public.es_admin(auth.uid()));
 
+drop policy if exists "Los administradores pueden insertar perfiles" on public.perfiles;
+create policy "Los administradores pueden insertar perfiles"
+  on public.perfiles for insert
+  with check (auth.uid() = id or public.es_admin(auth.uid()));
+
 -- Políticas para CITAS
 drop policy if exists "Los pacientes pueden ver sus propias citas" on public.citas;
 create policy "Los pacientes pueden ver sus propias citas"

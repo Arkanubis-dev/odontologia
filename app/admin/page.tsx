@@ -27,6 +27,12 @@ import {
   Lock,
   Crown,
   UserCheck,
+  User,
+  UserPlus,
+  Key,
+  Eye,
+  EyeOff,
+  Copy,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -99,10 +105,29 @@ function AdminContent() {
   const [calificaciones, setCalificaciones] = useState<Calificacion[]>([]);
 
   // Pestaña activa
-  const [tabActiva, setTabActiva] = useState<"citas" | "pacientes" | "tareas" | "calificaciones" | "roles">("citas");
+  const [tabActiva, setTabActiva] = useState<"citas" | "pacientes" | "tareas" | "calificaciones" | "roles" | "crear-usuario">("citas");
   const [filtroCitas, setFiltroCitas] = useState<string>("todas");
   const [busqueda, setBusqueda] = useState<string>("");
   const [busquedaUsuarios, setBusquedaUsuarios] = useState<string>("");
+
+  // Estados para Creador de Usuarios Locales (Super Admin)
+  const [formUsuario, setFormUsuario] = useState({
+    nombre: "",
+    email: "",
+    password: "",
+    rol: "paciente" as "paciente" | "psicologo" | "admin",
+    telefono: "",
+  });
+  const [mostrarPassword, setMostrarPassword] = useState(false);
+  const [creandoUsuario, setCreandoUsuario] = useState(false);
+  const [usuarioCreadoResultado, setUsuarioCreadoResultado] = useState<{
+    nombre: string;
+    email: string;
+    password: string;
+    rol: string;
+    telefono?: string;
+  } | null>(null);
+  const [credencialesCopiadas, setCredencialesCopiadas] = useState(false);
 
   // Modal para asignar nueva tarea terapéutica
   const [mostrarModalTarea, setMostrarModalTarea] = useState(false);
@@ -390,6 +415,93 @@ function AdminContent() {
     }
   };
 
+  // Generar contraseña segura aleatoria
+  const generarPasswordSegura = () => {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789!@#$%";
+    let pwd = "";
+    for (let i = 0; i < 10; i++) {
+      pwd += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    setFormUsuario((prev) => ({ ...prev, password: pwd }));
+    setMostrarPassword(true);
+  };
+
+  // Crear usuario local vía API endpoint (Exclusivo Super Admin)
+  const handleCrearUsuarioLocal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formUsuario.email || !formUsuario.password) {
+      alert("Por favor ingresa correo y contraseña.");
+      return;
+    }
+    if (formUsuario.password.length < 6) {
+      alert("La contraseña debe tener al menos 6 caracteres.");
+      return;
+    }
+
+    setCreandoUsuario(true);
+    setUsuarioCreadoResultado(null);
+
+    try {
+      const supabase = createClient();
+      const session = supabase ? (await supabase.auth.getSession()).data.session : null;
+
+      const res = await fetch("/api/admin/crear-usuario", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({
+          email: formUsuario.email,
+          password: formUsuario.password,
+          nombre_completo: formUsuario.nombre,
+          rol: formUsuario.rol,
+          telefono: formUsuario.telefono,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "No se pudo crear el usuario");
+      }
+
+      setUsuarioCreadoResultado({
+        nombre: formUsuario.nombre || formUsuario.email.split("@")[0],
+        email: formUsuario.email,
+        password: formUsuario.password,
+        rol: formUsuario.rol,
+        telefono: formUsuario.telefono,
+      });
+
+      // Recargar la lista de perfiles y pacientes en el panel
+      if (supabase) {
+        await recargarDatos(supabase);
+      }
+
+      // Limpiar campos del formulario
+      setFormUsuario({
+        nombre: "",
+        email: "",
+        password: "",
+        rol: "paciente",
+        telefono: "",
+      });
+    } catch (err: any) {
+      alert("Error al crear usuario local: " + err.message);
+    } finally {
+      setCreandoUsuario(false);
+    }
+  };
+
+  const handleCopiarCredenciales = () => {
+    if (!usuarioCreadoResultado) return;
+    const texto = `📋 Credenciales de Acceso - Dra. Alejandra Bedoya Psicología\n👤 Nombre: ${usuarioCreadoResultado.nombre}\n📧 Correo: ${usuarioCreadoResultado.email}\n🔑 Contraseña: ${usuarioCreadoResultado.password}\n🏷️ Rol: ${usuarioCreadoResultado.rol.toUpperCase()}\n🌐 Iniciar Sesión: https://psicologia-aleja.vercel.app/login`;
+    navigator.clipboard.writeText(texto);
+    setCredencialesCopiadas(true);
+    setTimeout(() => setCredencialesCopiadas(false), 3000);
+  };
+
   const handleCerrarSesion = async () => {
     const supabase = createClient();
     if (supabase) {
@@ -529,13 +641,22 @@ function AdminContent() {
 
             <div className="flex flex-wrap items-center gap-2.5">
               {esSuperAdmin && (
-                <button
-                  onClick={() => setTabActiva("roles")}
-                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-[#031926] font-extrabold text-xs sm:text-sm shadow-md hover:bg-[#F4E9CD] transition cursor-pointer shrink-0"
-                >
-                  <Crown className="w-4 h-4 text-amber-500" />
-                  Gestionar Roles
-                </button>
+                <>
+                  <button
+                    onClick={() => setTabActiva("crear-usuario")}
+                    className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-emerald-600 text-white font-extrabold text-xs sm:text-sm shadow-md hover:bg-emerald-500 transition cursor-pointer shrink-0"
+                  >
+                    <UserPlus className="w-4 h-4" />
+                    Creador de Usuarios
+                  </button>
+                  <button
+                    onClick={() => setTabActiva("roles")}
+                    className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-white text-[#031926] font-extrabold text-xs sm:text-sm shadow-md hover:bg-[#F4E9CD] transition cursor-pointer shrink-0"
+                  >
+                    <Crown className="w-4 h-4 text-amber-500" />
+                    Gestionar Roles
+                  </button>
+                </>
               )}
               <button
                 onClick={() => setMostrarModalTarea(true)}
@@ -631,17 +752,31 @@ function AdminContent() {
           </button>
 
           {esSuperAdmin && (
-            <button
-              onClick={() => setTabActiva("roles")}
-              className={`inline-flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
-                tabActiva === "roles"
-                  ? "bg-[#031926] text-white shadow-md border border-[#F4E9CD]/40"
-                  : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/20"
-              }`}
-            >
-              <Crown className="w-4 h-4 text-amber-400" />
-              <span>Gestión de Roles ({pacientes.length})</span>
-            </button>
+            <>
+              <button
+                onClick={() => setTabActiva("roles")}
+                className={`inline-flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
+                  tabActiva === "roles"
+                    ? "bg-[#031926] text-white shadow-md border border-[#F4E9CD]/40"
+                    : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/20"
+                }`}
+              >
+                <Crown className="w-4 h-4 text-amber-400" />
+                <span>Gestión de Roles ({pacientes.length})</span>
+              </button>
+
+              <button
+                onClick={() => setTabActiva("crear-usuario")}
+                className={`inline-flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
+                  tabActiva === "crear-usuario"
+                    ? "bg-[#031926] text-white shadow-md border border-emerald-400/40"
+                    : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/20"
+                }`}
+              >
+                <UserPlus className="w-4 h-4 text-emerald-400" />
+                <span>Creador de Usuarios</span>
+              </button>
+            </>
           )}
         </div>
 
@@ -1380,6 +1515,348 @@ function AdminContent() {
                     })}
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* 6. PESTAÑA: CREADOR DE USUARIOS LOCALES (SUPER ADMIN) */}
+        {tabActiva === "crear-usuario" && esSuperAdmin && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#9DBEBB]/40 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-[#9DBEBB]/30">
+                <div className="flex items-center gap-3.5">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center shadow-xs">
+                    <UserPlus className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg sm:text-xl font-black text-[#031926] flex items-center gap-2">
+                      Creador de Usuarios Locales
+                      <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-extrabold border border-amber-300">
+                        SUPER ADMIN
+                      </span>
+                    </h3>
+                    <p className="text-xs text-[#031926]/70 mt-0.5">
+                      Crea cuentas de acceso inmediato con correo y contraseña para consultantes, psicólogas o administradores.
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setTabActiva("roles")}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold text-[#468189] hover:bg-[#9DBEBB]/20 border border-[#9DBEBB]/40 transition self-start sm:self-auto cursor-pointer"
+                >
+                  <Users className="w-4 h-4" />
+                  <span>Ver lista de usuarios ({pacientes.length})</span>
+                </button>
+              </div>
+
+              {/* Tarjeta de Éxito al Crear Usuario */}
+              {usuarioCreadoResultado && (
+                <div className="mt-6 p-5 sm:p-6 rounded-2xl bg-emerald-50/90 border border-emerald-300 text-[#031926] space-y-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-emerald-500 text-white flex items-center justify-center shrink-0 shadow-xs">
+                        <Check className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm sm:text-base font-extrabold text-emerald-950">
+                          ¡Usuario Creado Exitosamente!
+                        </h4>
+                        <p className="text-xs text-emerald-800">
+                          La cuenta ha sido dada de alta en Supabase y ya puede iniciar sesión en la plataforma.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setUsuarioCreadoResultado(null)}
+                      className="text-emerald-700 hover:text-emerald-950 text-xs font-bold px-2 py-1 cursor-pointer"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  {/* Resumen de credenciales */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 bg-white p-4 rounded-xl border border-emerald-200">
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-500 uppercase block">Nombre:</span>
+                      <span className="text-xs font-bold text-[#031926] truncate block">{usuarioCreadoResultado.nombre}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-500 uppercase block">Correo de Acceso:</span>
+                      <span className="text-xs font-bold text-[#031926] truncate block">{usuarioCreadoResultado.email}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-500 uppercase block">Contraseña:</span>
+                      <span className="text-xs font-mono font-bold text-[#468189] block">{usuarioCreadoResultado.password}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] font-bold text-gray-500 uppercase block">Rol Asignado:</span>
+                      <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-900 border border-emerald-300">
+                        {usuarioCreadoResultado.rol === "psicologo"
+                          ? "🩺 Psicóloga"
+                          : usuarioCreadoResultado.rol === "admin"
+                          ? "👑 Admin"
+                          : "👤 Consultante"}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
+                    <button
+                      onClick={handleCopiarCredenciales}
+                      className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-xs transition cursor-pointer"
+                    >
+                      {credencialesCopiadas ? (
+                        <>
+                          <Check className="w-4 h-4 text-emerald-200" />
+                          <span>¡Copiado al Portapapeles!</span>
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="w-4 h-4" />
+                          <span>Copiar Credenciales para Enviar</span>
+                        </>
+                      )}
+                    </button>
+
+                    <button
+                      onClick={() => setTabActiva("roles")}
+                      className="text-xs font-bold text-emerald-900 hover:underline inline-flex items-center gap-1 cursor-pointer"
+                    >
+                      <span>Gestionar rol en tabla</span> →
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* Formulario de Creación */}
+              <form onSubmit={handleCrearUsuarioLocal} className="mt-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* Columna 1: Información de Contacto */}
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-extrabold text-[#468189] uppercase tracking-wider">
+                      1. Información del Usuario
+                    </h4>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#031926] mb-1.5">
+                        Nombre Completo <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <User className="w-4 h-4 text-[#77ACA2] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type="text"
+                          required
+                          placeholder="Ej: Dra. Alejandra Bedoya"
+                          value={formUsuario.nombre}
+                          onChange={(e) =>
+                            setFormUsuario({ ...formUsuario, nombre: e.target.value })
+                          }
+                          className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189] bg-white shadow-xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#031926] mb-1.5">
+                        Correo Electrónico (Usuario de Acceso) <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <Mail className="w-4 h-4 text-[#77ACA2] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type="email"
+                          required
+                          placeholder="ejemplo@correo.com"
+                          value={formUsuario.email}
+                          onChange={(e) =>
+                            setFormUsuario({ ...formUsuario, email: e.target.value })
+                          }
+                          className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189] bg-white shadow-xs"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#031926] mb-1.5">
+                        Teléfono / WhatsApp (Opcional)
+                      </label>
+                      <div className="relative">
+                        <Phone className="w-4 h-4 text-[#77ACA2] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type="tel"
+                          placeholder="+57 300 123 4567"
+                          value={formUsuario.telefono}
+                          onChange={(e) =>
+                            setFormUsuario({ ...formUsuario, telefono: e.target.value })
+                          }
+                          className="w-full pl-10 pr-3.5 py-3 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189] bg-white shadow-xs"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Columna 2: Seguridad y Rol */}
+                  <div className="space-y-4">
+                    <h4 className="text-xs font-extrabold text-[#468189] uppercase tracking-wider">
+                      2. Seguridad y Permisos
+                    </h4>
+
+                    <div>
+                      <div className="flex items-center justify-between mb-1.5">
+                        <label className="block text-xs font-bold text-[#031926]">
+                          Contraseña de Acceso <span className="text-rose-500">*</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={generarPasswordSegura}
+                          className="text-[11px] font-bold text-[#468189] hover:text-[#031926] hover:underline flex items-center gap-1 cursor-pointer"
+                        >
+                          <Sparkles className="w-3 h-3 text-amber-500" />
+                          Generar Contraseña
+                        </button>
+                      </div>
+
+                      <div className="relative">
+                        <Key className="w-4 h-4 text-[#77ACA2] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                        <input
+                          type={mostrarPassword ? "text" : "password"}
+                          required
+                          minLength={6}
+                          placeholder="Mínimo 6 caracteres"
+                          value={formUsuario.password}
+                          onChange={(e) =>
+                            setFormUsuario({ ...formUsuario, password: e.target.value })
+                          }
+                          className="w-full pl-10 pr-10 py-3 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189] bg-white shadow-xs font-mono"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setMostrarPassword(!mostrarPassword)}
+                          className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 cursor-pointer"
+                        >
+                          {mostrarPassword ? (
+                            <EyeOff className="w-4 h-4" />
+                          ) : (
+                            <Eye className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                      <p className="text-[10px] text-gray-500 mt-1">
+                        El usuario podrá usar esta contraseña para iniciar sesión en la web.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-[#031926] mb-2">
+                        Rol Inicial a Asignar <span className="text-rose-500">*</span>
+                      </label>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <label
+                          className={`p-3 rounded-xl border flex flex-col justify-between cursor-pointer transition ${
+                            formUsuario.rol === "paciente"
+                              ? "bg-[#FBF8F1] border-[#468189] ring-2 ring-[#468189]/30"
+                              : "border-[#9DBEBB]/40 hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="rolUsuario"
+                              value="paciente"
+                              checked={formUsuario.rol === "paciente"}
+                              onChange={() =>
+                                setFormUsuario({ ...formUsuario, rol: "paciente" })
+                              }
+                              className="accent-[#468189]"
+                            />
+                            <span className="text-xs font-bold text-[#031926]">Consultante</span>
+                          </div>
+                          <span className="text-[10px] text-gray-500 mt-1.5">
+                            Acceso básico: reservar citas, portal personal y tareas.
+                          </span>
+                        </label>
+
+                        <label
+                          className={`p-3 rounded-xl border flex flex-col justify-between cursor-pointer transition ${
+                            formUsuario.rol === "psicologo"
+                              ? "bg-[#FBF8F1] border-[#468189] ring-2 ring-[#468189]/30"
+                              : "border-[#9DBEBB]/40 hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="rolUsuario"
+                              value="psicologo"
+                              checked={formUsuario.rol === "psicologo"}
+                              onChange={() =>
+                                setFormUsuario({ ...formUsuario, rol: "psicologo" })
+                              }
+                              className="accent-[#468189]"
+                            />
+                            <span className="text-xs font-bold text-[#031926]">🩺 Psicóloga</span>
+                          </div>
+                          <span className="text-[10px] text-gray-500 mt-1.5">
+                            Panel clínico: gestión de citas, consultantes y tareas.
+                          </span>
+                        </label>
+
+                        <label
+                          className={`p-3 rounded-xl border flex flex-col justify-between cursor-pointer transition ${
+                            formUsuario.rol === "admin"
+                              ? "bg-amber-50/50 border-amber-400 ring-2 ring-amber-400/30"
+                              : "border-[#9DBEBB]/40 hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="rolUsuario"
+                              value="admin"
+                              checked={formUsuario.rol === "admin"}
+                              onChange={() =>
+                                setFormUsuario({ ...formUsuario, rol: "admin" })
+                              }
+                              className="accent-amber-600"
+                            />
+                            <span className="text-xs font-bold text-amber-900">👑 Admin</span>
+                          </div>
+                          <span className="text-[10px] text-amber-800/80 mt-1.5">
+                            Permisos completos de administración y control de roles.
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Botón de Envío */}
+                <div className="pt-4 border-t border-[#9DBEBB]/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex items-center gap-2 text-xs text-gray-500">
+                    <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span>El usuario se creará en el servicio de autenticación y en la tabla de perfiles.</span>
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={creandoUsuario}
+                    className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3.5 rounded-xl bg-[#031926] text-white font-extrabold text-xs sm:text-sm hover:bg-[#468189] transition shadow-md disabled:opacity-50 cursor-pointer"
+                  >
+                    {creandoUsuario ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        <span>Creando Usuario en Supabase...</span>
+                      </>
+                    ) : (
+                      <>
+                        <UserPlus className="w-4 h-4 text-emerald-400" />
+                        <span>Crear y Registrar Usuario</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         )}
