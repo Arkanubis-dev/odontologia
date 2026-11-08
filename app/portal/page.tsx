@@ -205,6 +205,23 @@ function PortalContent() {
           }
         }
 
+        // Cargar registros emocionales vía API (evita bloqueos de RLS)
+        try {
+          const animoApiRes = await fetch(`/api/registro-emocional?paciente_id=${authUser.id}`);
+          if (animoApiRes.ok) {
+            const animoApiData = await animoApiRes.json();
+            if (Array.isArray(animoApiData.registros)) {
+              setRegistrosEmocionales(animoApiData.registros);
+            }
+          } else if (animoRes.data) {
+            setRegistrosEmocionales(animoRes.data);
+          }
+        } catch {
+          if (animoRes.data) {
+            setRegistrosEmocionales(animoRes.data);
+          }
+        }
+
         // Cargar lista de psicólogas disponibles
         let psicosList: PsicologoInfo[] = [];
         try {
@@ -400,14 +417,31 @@ function PortalContent() {
     setNuevaNotaAnimo("");
 
     if (!isDemo && user?.id) {
-      const supabase = createClient();
-      if (supabase) {
-        await supabase.from("registro_emocional").insert({
-          paciente_id: user.id,
-          nivel_animo: nuevoAnimo,
-          emocion_principal: nuevaEmocion,
-          notas: nuevaNotaAnimo,
+      try {
+        const res = await fetch("/api/registro-emocional", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            paciente_id: user.id,
+            nivel_animo: nuevoAnimo,
+            emocion_principal: nuevaEmocion,
+            notas: nuevaNotaAnimo,
+          }),
         });
+
+        if (res.ok) {
+          const data = await res.json();
+          if (data.registro) {
+            setRegistrosEmocionales((prev) => [
+              data.registro,
+              ...prev.filter((r) => r.id !== nuevo.id),
+            ]);
+          }
+        } else {
+          console.error("Error al guardar estado de ánimo:", await res.json());
+        }
+      } catch (err) {
+        console.error("Error de red al guardar estado de ánimo:", err);
       }
     }
   };
