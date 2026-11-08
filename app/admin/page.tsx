@@ -203,13 +203,33 @@ function AdminContent() {
 
   async function recargarDatos(supabase: any) {
     try {
-      // 1. Cargar pacientes
-      const { data: dataPacientes } = await supabase
-        .from("perfiles")
-        .select("*")
-        .order("creado_en", { ascending: false });
+      // 1. Cargar pacientes / usuarios desde API segura (consulta auth.users + perfiles)
+      let listaPacientes: Perfil[] = [];
+      try {
+        const session = supabase ? (await supabase.auth.getSession()).data.session : null;
+        const resUsers = await fetch("/api/admin/usuarios", {
+          headers: {
+            ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+          },
+        });
+        if (resUsers.ok) {
+          const jsonUsers = await resUsers.json();
+          if (jsonUsers.usuarios) {
+            listaPacientes = jsonUsers.usuarios;
+          }
+        }
+      } catch {
+        // Fallback a consulta directa
+      }
 
-      const listaPacientes: Perfil[] = dataPacientes || [];
+      if (listaPacientes.length === 0) {
+        const { data: dataPacientes } = await supabase
+          .from("perfiles")
+          .select("*")
+          .order("creado_en", { ascending: false });
+        listaPacientes = dataPacientes || [];
+      }
+
       setPacientes(listaPacientes);
 
       // Mapa de pacientes para asociar nombres rápidamente
@@ -389,16 +409,21 @@ function AdminContent() {
     usuarioId: string,
     nuevoRol: "paciente" | "psicologo" | "admin"
   ) => {
-    const supabase = createClient();
-    if (!supabase) return;
-
     try {
-      const { error } = await supabase
-        .from("perfiles")
-        .update({ rol: nuevoRol })
-        .eq("id", usuarioId);
+      const supabase = createClient();
+      const session = supabase ? (await supabase.auth.getSession()).data.session : null;
 
-      if (error) throw error;
+      const res = await fetch("/api/admin/cambiar-rol", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ usuarioId, nuevoRol }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "No se pudo actualizar el rol");
 
       setPacientes((prev) =>
         prev.map((p) => (p.id === usuarioId ? { ...p, rol: nuevoRol } : p))

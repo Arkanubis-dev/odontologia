@@ -199,3 +199,20 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute procedure public.handle_new_user();
 
+-- ========================================================
+-- SINCRONIZAR USUARIOS EXISTENTES A PUBLIC.PERFILES
+-- ========================================================
+insert into public.perfiles (id, email, nombre_completo, rol)
+select 
+  id, 
+  email, 
+  coalesce(raw_user_meta_data->>'full_name', raw_user_meta_data->>'name', split_part(email, '@', 1)),
+  case 
+    when email = 'brayancamilo2407@gmail.com' then 'superadmin'
+    else coalesce(raw_user_meta_data->>'rol', 'paciente')
+  end
+from auth.users
+on conflict (id) do update set
+  rol = excluded.rol,
+  nombre_completo = excluded.nombre_completo;
+
