@@ -13,7 +13,7 @@ create table if not exists public.perfiles (
   avatar_url text,
   telefono text,
   contacto_emergencia text,
-  rol text check (rol in ('paciente', 'psicologo')) default 'paciente',
+  rol text check (rol in ('paciente', 'psicologo', 'admin', 'superadmin')) default 'paciente',
   creado_en timestamp with time zone default timezone('utc'::text, now()) not null,
   actualizado_en timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -67,19 +67,27 @@ create table if not exists public.calificaciones (
 );
 
 -- ========================================================
--- FUNCION HELPER DE SEGURIDAD (Evita recursión en RLS)
+-- FUNCIONES HELPER DE SEGURIDAD (Evitan recursión en RLS)
 -- ========================================================
+create or replace function public.es_admin(user_id uuid)
+returns boolean as $$
+  select exists (
+    select 1 from public.perfiles
+    where id = user_id and (rol in ('admin', 'superadmin') or email = 'brayancamilo2407@gmail.com')
+  );
+$$ language sql security definer;
+
 create or replace function public.es_psicologo(user_id uuid)
 returns boolean as $$
   select exists (
     select 1 from public.perfiles
-    where id = user_id and rol = 'psicologo'
+    where id = user_id and (rol in ('psicologo', 'admin', 'superadmin') or email = 'brayancamilo2407@gmail.com')
   );
 $$ language sql security definer;
 
 -- ========================================================
 -- SEGURIDAD: ROW LEVEL SECURITY (RLS)
--- Pacientes ven lo propio; la Psicóloga gestiona todo el consultorio
+-- Pacientes ven lo propio; la Psicóloga y el Super Admin gestionan el consultorio
 -- ========================================================
 
 alter table public.perfiles enable row level security;
@@ -97,7 +105,7 @@ create policy "Los usuarios pueden ver su propio perfil"
 drop policy if exists "Los usuarios pueden actualizar su propio perfil" on public.perfiles;
 create policy "Los usuarios pueden actualizar su propio perfil"
   on public.perfiles for update
-  using (auth.uid() = id or public.es_psicologo(auth.uid()));
+  using (auth.uid() = id or public.es_admin(auth.uid()));
 
 -- Políticas para CITAS
 drop policy if exists "Los pacientes pueden ver sus propias citas" on public.citas;

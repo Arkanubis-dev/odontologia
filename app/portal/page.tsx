@@ -420,12 +420,16 @@ function PortalContent() {
 
           {/* User info and Logout */}
           <div className="flex items-center gap-3 sm:gap-4">
-            {(user?.rol === "psicologo" || user?.email?.toLowerCase().includes("alejandra")) && (
+            {(user?.rol === "psicologo" ||
+              user?.rol === "admin" ||
+              user?.rol === "superadmin" ||
+              user?.email?.toLowerCase() === "brayancamilo2407@gmail.com" ||
+              user?.email?.toLowerCase().includes("alejandra")) && (
               <Link
                 href="/admin"
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#468189] text-white text-xs font-bold hover:bg-[#031926] shadow-sm transition"
+                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#468189] text-white text-xs font-bold hover:bg-[#031926] shadow-sm transition"
               >
-                <span>Panel Profesional</span>
+                <span>{user?.email?.toLowerCase() === "brayancamilo2407@gmail.com" ? "👑 Panel Super Admin" : "Panel Profesional"}</span>
               </Link>
             )}
 

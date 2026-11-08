@@ -58,6 +58,9 @@ export async function middleware(request: NextRequest) {
 
     const esAdmin = Boolean(
       perfil?.rol === "psicologo" ||
+      perfil?.rol === "admin" ||
+      perfil?.rol === "superadmin" ||
+      user.email?.toLowerCase() === "brayancamilo2407@gmail.com" ||
       user.email?.toLowerCase().includes("alejandra") ||
       user.email?.toLowerCase().includes("admin")
     );

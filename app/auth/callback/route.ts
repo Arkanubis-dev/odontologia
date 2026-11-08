@@ -20,6 +20,9 @@ export async function GET(request: Request) {
 
         if (
           perfil?.rol === "psicologo" ||
+          perfil?.rol === "admin" ||
+          perfil?.rol === "superadmin" ||
+          data.user.email?.toLowerCase() === "brayancamilo2407@gmail.com" ||
           data.user.email?.toLowerCase().includes("alejandra") ||
           data.user.email?.toLowerCase().includes("admin")
         ) {

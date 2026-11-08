@@ -91,6 +91,9 @@ export default function LoginPage() {
 
         if (
           perfil?.rol === "psicologo" ||
+          perfil?.rol === "admin" ||
+          perfil?.rol === "superadmin" ||
+          email.toLowerCase() === "brayancamilo2407@gmail.com" ||
           email.toLowerCase().includes("alejandra") ||
           email.toLowerCase().includes("admin")
         ) {

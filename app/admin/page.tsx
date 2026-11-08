@@ -25,6 +25,8 @@ import {
   Mail,
   AlertCircle,
   Lock,
+  Crown,
+  UserCheck,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -34,7 +36,7 @@ interface Perfil {
   nombre_completo?: string;
   avatar_url?: string;
   telefono?: string;
-  rol: "paciente" | "psicologo";
+  rol: "paciente" | "psicologo" | "admin" | "superadmin";
   creado_en: string;
 }
 
@@ -87,6 +89,7 @@ function AdminContent() {
   const [loading, setLoading] = useState(true);
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [esPsicologa, setEsPsicologa] = useState(false);
+  const [esSuperAdmin, setEsSuperAdmin] = useState(false);
 
   // Estados de datos
   const [citas, setCitas] = useState<Cita[]>([]);
@@ -96,9 +99,10 @@ function AdminContent() {
   const [calificaciones, setCalificaciones] = useState<Calificacion[]>([]);
 
   // Pestaña activa
-  const [tabActiva, setTabActiva] = useState<"citas" | "pacientes" | "tareas" | "calificaciones">("citas");
+  const [tabActiva, setTabActiva] = useState<"citas" | "pacientes" | "tareas" | "calificaciones" | "roles">("citas");
   const [filtroCitas, setFiltroCitas] = useState<string>("todas");
   const [busqueda, setBusqueda] = useState<string>("");
+  const [busquedaUsuarios, setBusquedaUsuarios] = useState<string>("");
 
   // Modal para asignar nueva tarea terapéutica
   const [mostrarModalTarea, setMostrarModalTarea] = useState(false);
@@ -126,6 +130,7 @@ function AdminContent() {
       if (!user) {
         setLoading(false);
         setEsPsicologa(false);
+        setEsSuperAdmin(false);
         router.replace("/login?redirect=/admin");
         return;
       }
@@ -137,8 +142,17 @@ function AdminContent() {
         .eq("id", user.id)
         .single();
 
-      // Permitir acceso estrictamente si es psicólogo o si el correo es de Alejandra/admin
+      // Verificar si es Super Admin (Camilo o rol admin/superadmin)
+      const esSuper = Boolean(
+        user.email?.toLowerCase() === "brayancamilo2407@gmail.com" ||
+        perfil?.rol === "admin" ||
+        perfil?.rol === "superadmin"
+      );
+      setEsSuperAdmin(esSuper);
+
+      // Permitir acceso si es Super Admin, psicóloga, o correo autorizado
       const esAdmin = Boolean(
+        esSuper ||
         perfil?.rol === "psicologo" ||
         user.email?.toLowerCase().includes("alejandra") ||
         user.email?.toLowerCase().includes("admin")
@@ -147,6 +161,7 @@ function AdminContent() {
       if (!esAdmin) {
         setLoading(false);
         setEsPsicologa(false);
+        setEsSuperAdmin(false);
         router.replace("/portal");
         return;
       }
@@ -344,6 +359,37 @@ function AdminContent() {
     }
   };
 
+  // Cambiar rol de un usuario (Función exclusiva de Super Admin)
+  const handleCambiarRol = async (
+    usuarioId: string,
+    nuevoRol: "paciente" | "psicologo" | "admin"
+  ) => {
+    const supabase = createClient();
+    if (!supabase) return;
+
+    try {
+      const { error } = await supabase
+        .from("perfiles")
+        .update({ rol: nuevoRol })
+        .eq("id", usuarioId);
+
+      if (error) throw error;
+
+      setPacientes((prev) =>
+        prev.map((p) => (p.id === usuarioId ? { ...p, rol: nuevoRol } : p))
+      );
+
+      const u = pacientes.find((p) => p.id === usuarioId);
+      alert(
+        `¡Rol actualizado con éxito! ${
+          u?.nombre_completo || u?.email
+        } ahora tiene el rol de: ${nuevoRol.toUpperCase()}`
+      );
+    } catch (err: any) {
+      alert("Error al actualizar rol: " + err.message);
+    }
+  };
+
   const handleCerrarSesion = async () => {
     const supabase = createClient();
     if (supabase) {
@@ -423,10 +469,21 @@ function AdminContent() {
                   Alejandra Bedoya
                 </h1>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <p className="text-[11px] text-[#468189] font-bold">
-                    Panel Profesional de Psicología
-                  </p>
+                  {esSuperAdmin ? (
+                    <>
+                      <Crown className="w-3.5 h-3.5 text-amber-500" />
+                      <p className="text-[11px] text-[#468189] font-bold">
+                        Super Administrador Master
+                      </p>
+                    </>
+                  ) : (
+                    <>
+                      <span className="inline-block w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <p className="text-[11px] text-[#468189] font-bold">
+                        Panel Profesional de Psicología
+                      </p>
+                    </>
+                  )}
                 </div>
               </div>
             </Link>
@@ -458,23 +515,36 @@ function AdminContent() {
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
             <div className="space-y-1.5 max-w-xl">
               <span className="inline-block px-3 py-1 bg-[#468189]/40 backdrop-blur-md rounded-full text-xs font-semibold uppercase tracking-wider text-[#9DBEBB] border border-[#77ACA2]/30">
-                Gestión Clínica & Terapéutica
+                {esSuperAdmin ? "👑 Modo Super Administrador" : "Gestión Clínica & Terapéutica"}
               </span>
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                Bienvenida, Alejandra 👋
+                {esSuperAdmin ? "Bienvenido, Camilo 👋" : "Bienvenida, Alejandra 👋"}
               </h2>
               <p className="text-[#9DBEBB] text-xs sm:text-sm leading-relaxed">
-                Aquí administras tus citas, asignas herramientas terapéuticas y marcas sesiones como finalizadas para recibir retroalimentación.
+                {esSuperAdmin
+                  ? "Panel de control maestro: asigna roles de psicóloga o administrador a los usuarios registrados, supervisa citas y tareas."
+                  : "Aquí administras tus citas, asignas herramientas terapéuticas y marcas sesiones como finalizadas para recibir retroalimentación."}
               </p>
             </div>
 
-            <button
-              onClick={() => setMostrarModalTarea(true)}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#F4E9CD] text-[#031926] font-extrabold text-xs sm:text-sm shadow-md hover:bg-white transition cursor-pointer shrink-0"
-            >
-              <Plus className="w-4 h-4 text-[#468189]" />
-              Asignar Tarea Terapéutica
-            </button>
+            <div className="flex flex-wrap items-center gap-2.5">
+              {esSuperAdmin && (
+                <button
+                  onClick={() => setTabActiva("roles")}
+                  className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-white text-[#031926] font-extrabold text-xs sm:text-sm shadow-md hover:bg-[#F4E9CD] transition cursor-pointer shrink-0"
+                >
+                  <Crown className="w-4 h-4 text-amber-500" />
+                  Gestionar Roles
+                </button>
+              )}
+              <button
+                onClick={() => setMostrarModalTarea(true)}
+                className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#F4E9CD] text-[#031926] font-extrabold text-xs sm:text-sm shadow-md hover:bg-white transition cursor-pointer shrink-0"
+              >
+                <Plus className="w-4 h-4 text-[#468189]" />
+                Asignar Tarea
+              </button>
+            </div>
           </div>
 
           {/* Tarjetas de Métricas Resumen */}
@@ -559,6 +629,20 @@ function AdminContent() {
             <Star className="w-4 h-4" />
             <span>Calificaciones ({calificaciones.length})</span>
           </button>
+
+          {esSuperAdmin && (
+            <button
+              onClick={() => setTabActiva("roles")}
+              className={`inline-flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
+                tabActiva === "roles"
+                  ? "bg-[#031926] text-white shadow-md border border-[#F4E9CD]/40"
+                  : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/20"
+              }`}
+            >
+              <Crown className="w-4 h-4 text-amber-400" />
+              <span>Gestión de Roles ({pacientes.length})</span>
+            </button>
+          )}
         </div>
 
         {/* 4. PESTAÑA: CITAS */}
@@ -837,6 +921,166 @@ function AdminContent() {
           </div>
         )}
 
+        {/* 8. PESTAÑA: GESTIÓN DE ROLES (EXCLUSIVO SUPER ADMIN) */}
+        {tabActiva === "roles" && esSuperAdmin && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#9DBEBB]/40 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#9DBEBB]/30">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-5 h-5 text-amber-500" />
+                    <h3 className="text-base sm:text-lg font-bold text-[#031926]">
+                      Control Maestro de Roles y Accesos
+                    </h3>
+                  </div>
+                  <p className="text-xs text-[#031926]/70 mt-1">
+                    Como Super Administrador ({currentUser?.email}), puedes promover o degradar usuarios para que actúen como Consultante, Psicóloga o Administrador.
+                  </p>
+                </div>
+
+                <div className="w-full sm:w-64 relative">
+                  <Search className="w-4 h-4 text-[#77ACA2] absolute left-3 top-3" />
+                  <input
+                    type="text"
+                    placeholder="Buscar usuario o correo..."
+                    value={busquedaUsuarios}
+                    onChange={(e) => setBusquedaUsuarios(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#9DBEBB]/50 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
+                  />
+                </div>
+              </div>
+
+              {/* Guía Rápida de Roles */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3.5 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/30 text-xs">
+                  <span className="font-bold text-[#031926] flex items-center gap-1.5 mb-1">
+                    <span>👤 Consultante (Paciente)</span>
+                  </span>
+                  <p className="text-[11px] text-[#031926]/70">
+                    Solo accede a su portal privado: agenda citas, realiza tareas terapéuticas y califica cuando su sesión sea finalizada.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-[#9DBEBB]/20 border border-[#77ACA2]/40 text-xs">
+                  <span className="font-bold text-[#031926] flex items-center gap-1.5 mb-1">
+                    <span>🩺 Psicóloga (Especialista)</span>
+                  </span>
+                  <p className="text-[11px] text-[#031926]/70">
+                    Accede al panel profesional: atiende sesiones, asigna tareas terapéuticas y marca citas como "Finalizadas".
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-[#F4E9CD] border border-[#77ACA2]/30 text-xs">
+                  <span className="font-bold text-[#031926] flex items-center gap-1.5 mb-1">
+                    <span>👑 Administrador</span>
+                  </span>
+                  <p className="text-[11px] text-[#031926]/70">
+                    Control total del sistema: supervisa todas las citas y puede asignar roles a cualquier usuario registrado.
+                  </p>
+                </div>
+              </div>
+
+              {/* Lista de Usuarios */}
+              <div className="space-y-3 pt-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#468189]">
+                  Usuarios Registrados en el Sistema ({pacientes.length})
+                </h4>
+
+                <div className="grid grid-cols-1 gap-3">
+                  {pacientes
+                    .filter((p) => {
+                      if (!busquedaUsuarios) return true;
+                      const q = busquedaUsuarios.toLowerCase();
+                      return (
+                        p.email.toLowerCase().includes(q) ||
+                        p.nombre_completo?.toLowerCase().includes(q)
+                      );
+                    })
+                    .map((p) => {
+                      const esEsteSuperAdmin =
+                        p.email.toLowerCase() === "brayancamilo2407@gmail.com";
+
+                      return (
+                        <div
+                          key={p.id}
+                          className="p-4 sm:p-5 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:shadow-xs transition"
+                        >
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-11 h-11 rounded-2xl bg-white text-[#031926] font-bold text-sm flex items-center justify-center border border-[#77ACA2]/40 shadow-xs shrink-0">
+                              {p.nombre_completo?.charAt(0).toUpperCase() || p.email.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h5 className="text-xs sm:text-sm font-bold text-[#031926]">
+                                  {p.nombre_completo || "Usuario sin nombre"}
+                                </h5>
+                                {esEsteSuperAdmin && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-extrabold border border-amber-300">
+                                    <Crown className="w-3 h-3 text-amber-600" />
+                                    SUPER ADMIN
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-[#031926]/70 flex items-center gap-1.5 mt-0.5">
+                                <Mail className="w-3 h-3 text-[#77ACA2]" />
+                                {p.email}
+                              </p>
+                              <p className="text-[10px] text-[#031926]/50 mt-0.5">
+                                Registrado el: {new Date(p.creado_en).toLocaleDateString("es-ES")}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Selector de Rol */}
+                          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-[#9DBEBB]/30">
+                            <div className="text-left sm:text-right">
+                              <span className="text-[10px] text-[#031926]/60 font-semibold block">
+                                Rol Asignado:
+                              </span>
+                              <span
+                                className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase mt-0.5 ${
+                                  p.rol === "admin" || p.rol === "superadmin"
+                                    ? "bg-amber-100 text-amber-900 border border-amber-200"
+                                    : p.rol === "psicologo"
+                                    ? "bg-[#468189] text-white"
+                                    : "bg-white text-[#031926] border border-[#9DBEBB]/60"
+                                }`}
+                              >
+                                {p.rol === "psicologo"
+                                  ? "🩺 Psicóloga"
+                                  : p.rol === "admin" || p.rol === "superadmin"
+                                  ? "👑 Admin"
+                                  : "👤 Consultante"}
+                              </span>
+                            </div>
+
+                            <div className="shrink-0">
+                              <select
+                                value={p.rol || "paciente"}
+                                disabled={esEsteSuperAdmin}
+                                onChange={(e) =>
+                                  handleCambiarRol(
+                                    p.id,
+                                    e.target.value as "paciente" | "psicologo" | "admin"
+                                  )
+                                }
+                                className="p-2 sm:p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs font-semibold text-[#031926] bg-white hover:border-[#468189] focus:outline-none focus:ring-2 focus:ring-[#468189] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
+                              >
+                                <option value="paciente">👤 Consultante</option>
+                                <option value="psicologo">🩺 Psicóloga / Especialista</option>
+                                <option value="admin">👑 Administrador</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* 6. PESTAÑA: TAREAS TERAPÉUTICAS */}
         {tabActiva === "tareas" && (
           <div className="space-y-4">
@@ -976,6 +1220,166 @@ function AdminContent() {
                   ))}
                 </div>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* 8. PESTAÑA: GESTIÓN DE ROLES (EXCLUSIVO SUPER ADMIN) */}
+        {tabActiva === "roles" && esSuperAdmin && (
+          <div className="space-y-4">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#9DBEBB]/40 shadow-xs space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#9DBEBB]/30">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-5 h-5 text-amber-500" />
+                    <h3 className="text-base sm:text-lg font-bold text-[#031926]">
+                      Control Maestro de Roles y Accesos
+                    </h3>
+                  </div>
+                  <p className="text-xs text-[#031926]/70 mt-1">
+                    Como Super Administrador ({currentUser?.email}), puedes promover o degradar usuarios para que actúen como Consultante, Psicóloga o Administrador.
+                  </p>
+                </div>
+
+                <div className="w-full sm:w-64 relative">
+                  <Search className="w-4 h-4 text-[#77ACA2] absolute left-3 top-3" />
+                  <input
+                    type="text"
+                    placeholder="Buscar usuario o correo..."
+                    value={busquedaUsuarios}
+                    onChange={(e) => setBusquedaUsuarios(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#9DBEBB]/50 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
+                  />
+                </div>
+              </div>
+
+              {/* Guía Rápida de Roles */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div className="p-3.5 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/30 text-xs">
+                  <span className="font-bold text-[#031926] flex items-center gap-1.5 mb-1">
+                    <span>👤 Consultante (Paciente)</span>
+                  </span>
+                  <p className="text-[11px] text-[#031926]/70">
+                    Solo accede a su portal privado: agenda citas, realiza tareas terapéuticas y califica cuando su sesión sea finalizada.
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-[#9DBEBB]/20 border border-[#77ACA2]/40 text-xs">
+                  <span className="font-bold text-[#031926] flex items-center gap-1.5 mb-1">
+                    <span>🩺 Psicóloga (Especialista)</span>
+                  </span>
+                  <p className="text-[11px] text-[#031926]/70">
+                    Accede al panel profesional: atiende sesiones, asigna tareas terapéuticas y marca citas como "Finalizadas".
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-[#F4E9CD] border border-[#77ACA2]/30 text-xs">
+                  <span className="font-bold text-[#031926] flex items-center gap-1.5 mb-1">
+                    <span>👑 Administrador</span>
+                  </span>
+                  <p className="text-[11px] text-[#031926]/70">
+                    Control total del sistema: supervisa todas las citas y puede asignar roles a cualquier usuario registrado.
+                  </p>
+                </div>
+              </div>
+
+              {/* Lista de Usuarios */}
+              <div className="space-y-3 pt-2">
+                <h4 className="text-xs font-bold uppercase tracking-wider text-[#468189]">
+                  Usuarios Registrados en el Sistema ({pacientes.length})
+                </h4>
+
+                <div className="grid grid-cols-1 gap-3">
+                  {pacientes
+                    .filter((p) => {
+                      if (!busquedaUsuarios) return true;
+                      const q = busquedaUsuarios.toLowerCase();
+                      return (
+                        p.email.toLowerCase().includes(q) ||
+                        p.nombre_completo?.toLowerCase().includes(q)
+                      );
+                    })
+                    .map((p) => {
+                      const esEsteSuperAdmin =
+                        p.email.toLowerCase() === "brayancamilo2407@gmail.com";
+
+                      return (
+                        <div
+                          key={p.id}
+                          className="p-4 sm:p-5 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:shadow-xs transition"
+                        >
+                          <div className="flex items-center gap-3.5">
+                            <div className="w-11 h-11 rounded-2xl bg-white text-[#031926] font-bold text-sm flex items-center justify-center border border-[#77ACA2]/40 shadow-xs shrink-0">
+                              {p.nombre_completo?.charAt(0).toUpperCase() || p.email.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h5 className="text-xs sm:text-sm font-bold text-[#031926]">
+                                  {p.nombre_completo || "Usuario sin nombre"}
+                                </h5>
+                                {esEsteSuperAdmin && (
+                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-extrabold border border-amber-300">
+                                    <Crown className="w-3 h-3 text-amber-600" />
+                                    SUPER ADMIN
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-[#031926]/70 flex items-center gap-1.5 mt-0.5">
+                                <Mail className="w-3 h-3 text-[#77ACA2]" />
+                                {p.email}
+                              </p>
+                              <p className="text-[10px] text-[#031926]/50 mt-0.5">
+                                Registrado el: {new Date(p.creado_en).toLocaleDateString("es-ES")}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Selector de Rol */}
+                          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-[#9DBEBB]/30">
+                            <div className="text-left sm:text-right">
+                              <span className="text-[10px] text-[#031926]/60 font-semibold block">
+                                Rol Asignado:
+                              </span>
+                              <span
+                                className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase mt-0.5 ${
+                                  p.rol === "admin" || p.rol === "superadmin"
+                                    ? "bg-amber-100 text-amber-900 border border-amber-200"
+                                    : p.rol === "psicologo"
+                                    ? "bg-[#468189] text-white"
+                                    : "bg-white text-[#031926] border border-[#9DBEBB]/60"
+                                }`}
+                              >
+                                {p.rol === "psicologo"
+                                  ? "🩺 Psicóloga"
+                                  : p.rol === "admin" || p.rol === "superadmin"
+                                  ? "👑 Admin"
+                                  : "👤 Consultante"}
+                              </span>
+                            </div>
+
+                            <div className="shrink-0">
+                              <select
+                                value={p.rol || "paciente"}
+                                disabled={esEsteSuperAdmin}
+                                onChange={(e) =>
+                                  handleCambiarRol(
+                                    p.id,
+                                    e.target.value as "paciente" | "psicologo" | "admin"
+                                  )
+                                }
+                                className="p-2 sm:p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs font-semibold text-[#031926] bg-white hover:border-[#468189] focus:outline-none focus:ring-2 focus:ring-[#468189] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
+                              >
+                                <option value="paciente">👤 Consultante</option>
+                                <option value="psicologo">🩺 Psicóloga / Especialista</option>
+                                <option value="admin">👑 Administrador</option>
+                              </select>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                </div>
+              </div>
             </div>
           </div>
         )}
