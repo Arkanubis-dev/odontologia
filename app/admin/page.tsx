@@ -39,6 +39,8 @@ import {
   Settings,
   RefreshCw,
   X,
+  MessageSquare,
+  Send,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -113,12 +115,19 @@ function AdminContent() {
   const [calificaciones, setCalificaciones] = useState<Calificacion[]>([]);
 
   // Pestaña activa
-  const [tabActiva, setTabActiva] = useState<"citas" | "pacientes" | "tareas" | "calificaciones" | "roles" | "crear-usuario" | "emocional">("citas");
+  const [tabActiva, setTabActiva] = useState<"citas" | "pacientes" | "tareas" | "calificaciones" | "roles" | "crear-usuario" | "emocional" | "chat">("citas");
   const [filtroCitas, setFiltroCitas] = useState<string>("todas");
   const [filtroPsicologo, setFiltroPsicologo] = useState<string>("todos");
   const [filtroPacienteEmocional, setFiltroPacienteEmocional] = useState<string>("todos");
   const [busqueda, setBusqueda] = useState<string>("");
   const [busquedaUsuarios, setBusquedaUsuarios] = useState<string>("");
+
+  // Estados para Messenger / Chat en Panel de Psicóloga
+  const [pacienteChatSeleccionado, setPacienteChatSeleccionado] = useState<Perfil | null>(null);
+  const [mensajesChat, setMensajesChat] = useState<any[]>([]);
+  const [textoMensajeChat, setTextoMensajeChat] = useState("");
+  const [enviandoMensajeChat, setEnviandoMensajeChat] = useState(false);
+  const [busquedaChat, setBusquedaChat] = useState("");
 
   // Perfil del usuario actual autenticado
   const [currentUserPerfil, setCurrentUserPerfil] = useState<Perfil | null>(null);
@@ -371,6 +380,94 @@ function AdminContent() {
       console.error("Error al cargar datos en panel de psicóloga:", err);
     }
   }
+
+  // Heartbeat de presencia de especialista en línea
+  useEffect(() => {
+    if (!currentUser?.id) return;
+    const reportarPresencia = async () => {
+      try {
+        const rolActual = esSuperAdmin ? "superadmin" : esPsicologa ? "psicologo" : "admin";
+        await fetch("/api/chat/presencia", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ usuario_id: currentUser.id, rol: rolActual }),
+        });
+      } catch {}
+    };
+
+    reportarPresencia();
+    const interval = setInterval(reportarPresencia, 30000);
+    return () => clearInterval(interval);
+  }, [currentUser?.id, esSuperAdmin, esPsicologa]);
+
+  // Cargar mensajes en tiempo real cuando se selecciona un paciente
+  useEffect(() => {
+    if (!pacienteChatSeleccionado?.id || !currentUser?.id) return;
+
+    const cargarMensajesAdmin = async () => {
+      try {
+        const res = await fetch(
+          `/api/chat/mensajes?usuario_id=${currentUser.id}&contacto_id=${pacienteChatSeleccionado.id}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          if (Array.isArray(data.mensajes)) {
+            setMensajesChat(data.mensajes);
+          }
+        }
+      } catch {}
+    };
+
+    cargarMensajesAdmin();
+    const interval = setInterval(cargarMensajesAdmin, 3500);
+    return () => clearInterval(interval);
+  }, [pacienteChatSeleccionado?.id, currentUser?.id]);
+
+  // Enviar mensaje a paciente desde panel de especialista
+  const handleEnviarMensajeAdmin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!textoMensajeChat.trim() || !pacienteChatSeleccionado?.id || !currentUser?.id || enviandoMensajeChat) return;
+
+    const contenido = textoMensajeChat.trim();
+    setEnviandoMensajeChat(true);
+
+    const tempMsg = {
+      id: "temp-" + Date.now(),
+      remitente_id: currentUser.id,
+      destinatario_id: pacienteChatSeleccionado.id,
+      contenido,
+      leido: false,
+      creado_en: new Date().toISOString(),
+    };
+
+    setMensajesChat((prev) => [...prev, tempMsg]);
+    setTextoMensajeChat("");
+
+    try {
+      const res = await fetch("/api/chat/mensajes", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          remitente_id: currentUser.id,
+          destinatario_id: pacienteChatSeleccionado.id,
+          contenido,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.mensaje) {
+          setMensajesChat((prev) =>
+            prev.map((m) => (m.id === tempMsg.id ? data.mensaje : m))
+          );
+        }
+      }
+    } catch (err) {
+      console.error("Error al enviar mensaje:", err);
+    } finally {
+      setEnviandoMensajeChat(false);
+    }
+  };
 
   // Cambiar estado de una cita (Finalizar servicio para desbloquear calificación)
   const handleCambiarEstadoCita = async (
@@ -1083,6 +1180,18 @@ function AdminContent() {
           >
             <Smile className="w-4 h-4 text-emerald-400" />
             <span>Diario Emocional ({emocionales.length})</span>
+          </button>
+
+          <button
+            onClick={() => setTabActiva("chat")}
+            className={`inline-flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
+              tabActiva === "chat"
+                ? "bg-[#468189] text-white shadow-sm"
+                : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/20"
+            }`}
+          >
+            <MessageSquare className="w-4 h-4 text-sky-400" />
+            <span>Messenger / Chat</span>
           </button>
 
           {esSuperAdmin && (
@@ -2291,6 +2400,185 @@ function AdminContent() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+        {/* 8. PESTAÑA: MESSENGER / CHAT EN VIVO CON PACIENTES */}
+        {tabActiva === "chat" && (
+          <div className="bg-white rounded-3xl border border-[#9DBEBB]/40 shadow-sm overflow-hidden h-[680px] max-h-[80vh] flex flex-col md:flex-row">
+            {/* Panel Izquierdo: Lista de Consultantes */}
+            <div className="w-full md:w-80 border-r border-[#9DBEBB]/30 flex flex-col bg-[#FBF8F1]/40">
+              <div className="p-4 border-b border-[#9DBEBB]/30 bg-white">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-base font-bold text-[#031926] flex items-center gap-2">
+                    <MessageSquare className="w-5 h-5 text-[#468189]" />
+                    Conversaciones
+                  </h3>
+                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300">
+                    🟢 En línea
+                  </span>
+                </div>
+
+                <div className="relative">
+                  <Search className="w-4 h-4 text-[#77ACA2] absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    value={busquedaChat}
+                    onChange={(e) => setBusquedaChat(e.target.value)}
+                    placeholder="Buscar consultante..."
+                    className="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-[#9DBEBB]/60 bg-[#FBF8F1] text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex-1 overflow-y-auto divide-y divide-[#9DBEBB]/20">
+                {pacientes
+                  .filter((p) => p.rol !== "psicologo")
+                  .filter((p) =>
+                    busquedaChat
+                      ? (p.nombre_completo || "").toLowerCase().includes(busquedaChat.toLowerCase()) ||
+                        p.email.toLowerCase().includes(busquedaChat.toLowerCase())
+                      : true
+                  )
+                  .map((p) => {
+                    const seleccionado = pacienteChatSeleccionado?.id === p.id;
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() => setPacienteChatSeleccionado(p)}
+                        className={`w-full text-left p-3.5 flex items-center gap-3 transition cursor-pointer ${
+                          seleccionado
+                            ? "bg-[#468189]/15 border-l-4 border-[#468189]"
+                            : "hover:bg-white/60"
+                        }`}
+                      >
+                        <div className="w-10 h-10 rounded-2xl bg-[#031926] text-white flex items-center justify-center font-bold text-xs shrink-0 shadow-xs">
+                          {(p.nombre_completo || p.email).charAt(0).toUpperCase()}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold text-[#031926] truncate block">
+                              {p.nombre_completo || p.email.split("@")[0]}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-[#031926]/60 truncate mt-0.5">
+                            {p.email}
+                          </p>
+                        </div>
+                      </button>
+                    );
+                  })}
+              </div>
+            </div>
+
+            {/* Panel Derecho: Hilo de Chat */}
+            <div className="flex-1 flex flex-col bg-white">
+              {pacienteChatSeleccionado ? (
+                <>
+                  {/* Cabecera del hilo de conversación */}
+                  <div className="p-4 border-b border-[#9DBEBB]/30 flex items-center justify-between bg-white shadow-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#468189] text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                        {(pacienteChatSeleccionado.nombre_completo || pacienteChatSeleccionado.email).charAt(0).toUpperCase()}
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-[#031926]">
+                          {pacienteChatSeleccionado.nombre_completo || pacienteChatSeleccionado.email.split("@")[0]}
+                        </h4>
+                        <p className="text-[11px] text-[#031926]/60">
+                          Consultante · {pacienteChatSeleccionado.email}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] text-[#468189] bg-[#77ACA2]/15 px-3 py-1 rounded-full font-semibold border border-[#77ACA2]/30">
+                        Sesión Privada
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Feed de Mensajes */}
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-3 bg-[#FBF8F1]/40">
+                    {mensajesChat.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-center p-8 text-[#031926]/60">
+                        <div className="w-12 h-12 rounded-2xl bg-[#9DBEBB]/20 text-[#468189] flex items-center justify-center mb-3">
+                          <MessageSquare className="w-6 h-6" />
+                        </div>
+                        <h5 className="text-sm font-bold text-[#031926]">
+                          Aún no hay mensajes con este consultante
+                        </h5>
+                        <p className="text-xs text-[#031926]/70 mt-1 max-w-sm">
+                          Envía un mensaje de bienvenida o responde a las preguntas de tu paciente sobre sus tareas y citas.
+                        </p>
+                      </div>
+                    ) : (
+                      mensajesChat.map((msg) => {
+                        const esMio = msg.remitente_id === currentUser?.id;
+                        const hora = new Date(msg.creado_en).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        });
+
+                        return (
+                          <div
+                            key={msg.id}
+                            className={`flex flex-col ${esMio ? "items-end" : "items-start"}`}
+                          >
+                            <div
+                              className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-xs ${
+                                esMio
+                                  ? "bg-[#468189] text-white rounded-br-xs"
+                                  : "bg-white text-[#031926] border border-[#9DBEBB]/40 rounded-bl-xs"
+                              }`}
+                            >
+                              {msg.contenido}
+                            </div>
+                            <span className="text-[10px] text-gray-400 mt-1 px-1 flex items-center gap-1">
+                              {hora}
+                              {esMio && <Check className="w-3 h-3 text-[#77ACA2]" />}
+                            </span>
+                          </div>
+                        );
+                      })
+                    )}
+                  </div>
+
+                  {/* Formulario de Respuesta */}
+                  <form
+                    onSubmit={handleEnviarMensajeAdmin}
+                    className="p-3.5 bg-white border-t border-[#9DBEBB]/30 flex items-center gap-2"
+                  >
+                    <input
+                      type="text"
+                      value={textoMensajeChat}
+                      onChange={(e) => setTextoMensajeChat(e.target.value)}
+                      placeholder={`Escribe un mensaje para ${pacienteChatSeleccionado.nombre_completo || "el consultante"}...`}
+                      className="flex-1 bg-[#FBF8F1] border border-[#9DBEBB]/50 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
+                    />
+                    <button
+                      type="submit"
+                      disabled={enviandoMensajeChat || !textoMensajeChat.trim()}
+                      className="px-5 py-2.5 rounded-2xl bg-[#031926] hover:bg-[#468189] text-white text-xs sm:text-sm font-bold flex items-center gap-2 transition disabled:opacity-40 cursor-pointer shrink-0 shadow-md"
+                    >
+                      <Send className="w-4 h-4" />
+                      <span>Enviar</span>
+                    </button>
+                  </form>
+                </>
+              ) : (
+                <div className="h-full flex flex-col items-center justify-center text-center p-8 text-[#031926]/60">
+                  <div className="w-14 h-14 rounded-3xl bg-[#F4E9CD] text-[#468189] flex items-center justify-center mb-3">
+                    <MessageSquare className="w-7 h-7" />
+                  </div>
+                  <h4 className="text-base font-extrabold text-[#031926]">
+                    Messenger / Chat con Consultantes
+                  </h4>
+                  <p className="text-xs text-[#031926]/70 mt-1.5 max-w-sm leading-relaxed">
+                    Selecciona un paciente de la lista izquierda para ver el historial y responder sus dudas en tiempo real.
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         )}

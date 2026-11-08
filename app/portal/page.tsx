@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import CalendarioCitas, { PsicologoInfo } from "@/components/CalendarioCitas";
+import ChatFlotante from "@/components/ChatFlotante";
 
 interface Cita {
   id: string;
@@ -1271,6 +1272,26 @@ function PortalContent() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Messenger Flotante para Chatear con la Psicóloga */}
+      {user?.id && (
+        <ChatFlotante
+          usuarioActual={{
+            id: user.id,
+            nombre: user.nombre || "Consultante",
+            email: user.email,
+          }}
+          especialista={
+            psicologos.length > 0
+              ? {
+                  id: psicologos[0].id,
+                  nombre: psicologos[0].nombre_completo || "Dra. Alyson López",
+                  avatar: psicologos[0].avatar_url,
+                }
+              : undefined
+          }
+        />
       )}
     </div>
   );
