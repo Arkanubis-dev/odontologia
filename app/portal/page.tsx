@@ -23,7 +23,7 @@ import {
   ExternalLink
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
-import CalendarioSelia, { PsicologoInfo } from "@/components/CalendarioSelia";
+import CalendarioCitas, { PsicologoInfo } from "@/components/CalendarioCitas";
 
 interface Cita {
   id: string;
@@ -1018,14 +1018,14 @@ function PortalContent() {
         )}
       </main>
 
-      {/* Modal: Solicitar Cita con Calendario Selia */}
+      {/* Modal: Solicitar Cita con Calendario */}
       {mostrarModalCita && (
         <div className="fixed inset-0 z-50 bg-[#031926]/50 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
           <div className="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-[#9DBEBB]/40 my-8">
             <div className="flex items-start justify-between pb-4 border-b border-[#9DBEBB]/30 mb-6">
               <div>
                 <span className="inline-block px-3 py-1 bg-[#9DBEBB]/25 text-[#468189] text-[11px] font-extrabold uppercase tracking-wider rounded-full mb-1">
-                  Reserva en Tiempo Real (Estilo Selia)
+                  Reserva en Tiempo Real
                 </span>
                 <h3 className="text-xl font-black text-[#031926]">
                   Agendar Sesión de Consulta
@@ -1044,8 +1044,8 @@ function PortalContent() {
             </div>
 
             <form onSubmit={handleCrearCita} className="space-y-6">
-              {/* Calendario Selia con selector de profesional y slots */}
-              <CalendarioSelia
+              {/* Calendario con selector de profesional y slots de atención */}
+              <CalendarioCitas
                 psicologos={psicologos}
                 psicologoSeleccionadoId={psicologoSeleccionadoId}
                 onCambiarPsicologo={(id) => setPsicologoSeleccionadoId(id)}

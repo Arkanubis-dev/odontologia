@@ -130,7 +130,7 @@ function AdminContent() {
   const [reprogramarEnlace, setReprogramarEnlace] = useState("");
   const [guardandoReprogramacion, setGuardandoReprogramacion] = useState(false);
 
-  // Modal para Configuración de Disponibilidad y Horarios del Psicólogo (Estilo Selia)
+  // Modal para Configuración de Disponibilidad y Horarios del Psicólogo
   const [mostrarModalDisponibilidad, setMostrarModalDisponibilidad] = useState(false);
   const [diasLaborales, setDiasLaborales] = useState<string[]>(["lunes", "martes", "miercoles", "jueves", "viernes"]);
   const [horaInicioLab, setHoraInicioLab] = useState("08:00");
@@ -665,7 +665,7 @@ function AdminContent() {
     }
   };
 
-  // Guardar configuración de horarios de atención (Estilo Selia)
+  // Guardar configuración de horarios de atención
   const handleGuardarDisponibilidad = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser?.id) return;
@@ -869,7 +869,7 @@ function AdminContent() {
                 className="inline-flex items-center gap-2 px-4 py-3 rounded-xl bg-white/10 hover:bg-white/20 text-white font-extrabold text-xs sm:text-sm border border-white/20 transition cursor-pointer shrink-0"
               >
                 <Settings className="w-4 h-4 text-[#9DBEBB]" />
-                <span>Mis Horarios (Selia)</span>
+                <span>Mis Horarios de Atención</span>
               </button>
 
               {esSuperAdmin && (
@@ -2269,7 +2269,7 @@ function AdminContent() {
         </div>
       )}
 
-      {/* MODAL: CONFIGURAR HORARIOS Y DISPONIBILIDAD (ESTILO SELIA) */}
+      {/* MODAL: CONFIGURAR HORARIOS Y DISPONIBILIDAD */}
       {mostrarModalDisponibilidad && (
         <div className="fixed inset-0 z-50 bg-[#031926]/50 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl border border-[#9DBEBB]/40 space-y-4">
@@ -2280,7 +2280,7 @@ function AdminContent() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-[#031926]">
-                    Mis Horarios y Disponibilidad (Estilo Selia)
+                    Mis Horarios y Disponibilidad
                   </h3>
                   <p className="text-xs text-[#031926]/70">
                     Define tus días laborales y franja horaria para las reservas de tus pacientes.

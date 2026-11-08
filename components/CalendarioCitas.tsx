@@ -11,7 +11,7 @@ export interface PsicologoInfo {
   especialidad?: string;
 }
 
-interface CalendarioSeliaProps {
+interface CalendarioCitasProps {
   psicologos?: PsicologoInfo[];
   psicologoSeleccionadoId?: string;
   onCambiarPsicologo?: (id: string) => void;
@@ -28,7 +28,7 @@ const MESES = [
 
 const DIAS_SEMANA = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 
-export default function CalendarioSelia({
+export default function CalendarioCitas({
   psicologos = [],
   psicologoSeleccionadoId,
   onCambiarPsicologo,
@@ -36,7 +36,7 @@ export default function CalendarioSelia({
   onSeleccionarFechaHora,
   fechaHoraSeleccionada,
   duracionMinutos = 50,
-}: CalendarioSeliaProps) {
+}: CalendarioCitasProps) {
   const hoy = useMemo(() => new Date(), []);
   
   // Mes y año actual del calendario
@@ -109,7 +109,7 @@ export default function CalendarioSelia({
     return celdas;
   }, [anoActual, mesActual]);
 
-  // Horarios disponibles estilo Selia (8am a 6pm con pausa)
+  // Horarios de atención disponibles (8am a 6pm con pausa)
   const horariosPosibles = [
     "08:00", "09:00", "10:00", "11:00",
     "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"
@@ -283,7 +283,7 @@ export default function CalendarioSelia({
           </div>
         </div>
 
-        {/* Columna Derecha: Horarios Disponibles estilo Selia */}
+        {/* Columna Derecha: Horarios Disponibles */}
         <div className="md:col-span-5 md:border-l md:border-[#9DBEBB]/30 md:pl-5 space-y-3 flex flex-col justify-between">
           <div>
             <div className="flex items-center justify-between pb-2 border-b border-[#9DBEBB]/30">
