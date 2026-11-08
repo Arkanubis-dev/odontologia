@@ -70,18 +70,30 @@ export default function LoginPage() {
       }
 
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const res = await fetch("/api/auth/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        });
+
+        const regData = await res.json();
+        if (!res.ok) throw new Error(regData.error || "No se pudo crear la cuenta");
+
+        // Iniciar sesión automáticamente
+        const { error: signInErr } = await supabase.auth.signInWithPassword({
           email,
           password,
-          options: {
-            data: {
-              full_name: email.split("@")[0],
-            },
-          },
         });
-        if (error) throw error;
-        alert("¡Cuenta creada con éxito! Ya puedes iniciar sesión.");
-        setIsSignUp(false);
+
+        if (signInErr) {
+          alert("¡Cuenta creada exitosamente! Ya puedes iniciar sesión.");
+          setIsSignUp(false);
+          setLoading(false);
+          return;
+        }
+
+        router.replace("/portal");
+        return;
       } else {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
