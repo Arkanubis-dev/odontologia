@@ -1,0 +1,89 @@
+import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
+
+export async function proxy(request: NextRequest) {
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
+  const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!rawUrl || !supabaseAnonKey) {
+    return response;
+  }
+
+  const supabaseUrl = rawUrl.replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
+
+  const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet) {
+        cookiesToSet.forEach(({ name, value }) =>
+          request.cookies.set(name, value)
+        );
+        response = NextResponse.next({
+          request,
+        });
+        cookiesToSet.forEach(({ name, value, options }) =>
+          response.cookies.set(name, value, options)
+        );
+      },
+    },
+  });
+
+  // Obtener usuario autenticado de la sesión
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // 1. Proteger estrictamente la ruta /admin (Solo psicóloga)
+  if (request.nextUrl.pathname.startsWith("/admin")) {
+    if (!user) {
+      const redirectUrl = new URL("/login", request.url);
+      redirectUrl.searchParams.set("redirect", "/admin");
+      return NextResponse.redirect(redirectUrl);
+    }
+
+    // Verificar rol en perfiles
+    const { data: perfil } = await supabase
+      .from("perfiles")
+      .select("rol")
+      .eq("id", user.id)
+      .single();
+
+    const esAdmin = Boolean(
+      perfil?.rol === "psicologo" ||
+      user.email?.toLowerCase().includes("alejandra") ||
+      user.email?.toLowerCase().includes("admin")
+    );
+
+    if (!esAdmin) {
+      // Usuario autenticado pero es un paciente común: redirigir a su portal
+      return NextResponse.redirect(new URL("/portal", request.url));
+    }
+  }
+
+  // 2. Proteger la ruta /portal (Requiere sesión a menos que sea demo)
+  if (request.nextUrl.pathname.startsWith("/portal")) {
+    const isDemo = request.nextUrl.searchParams.get("demo") === "true";
+    if (!user && !isDemo) {
+      const redirectUrl = new URL("/login", request.url);
+      redirectUrl.searchParams.set("redirect", "/portal");
+      return NextResponse.redirect(redirectUrl);
+    }
+  }
+
+  return response;
+}
+
+export const config = {
+  matcher: [
+    "/admin/:path*",
+    "/portal/:path*",
+  ],
+};

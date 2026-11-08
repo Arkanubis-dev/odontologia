@@ -24,6 +24,7 @@ import {
   Phone,
   Mail,
   AlertCircle,
+  Lock,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -123,11 +124,11 @@ function AdminContent() {
       const { data: { user } } = await supabase.auth.getUser();
 
       if (!user) {
-        router.push("/login");
+        setLoading(false);
+        setEsPsicologa(false);
+        router.replace("/login?redirect=/admin");
         return;
       }
-
-      setCurrentUser(user);
 
       // Verificar rol en perfiles
       const { data: perfil } = await supabase
@@ -136,14 +137,22 @@ function AdminContent() {
         .eq("id", user.id)
         .single();
 
-      // Permitir acceso si es psicologo o si es el correo principal de Alejandra
+      // Permitir acceso estrictamente si es psicólogo o si el correo es de Alejandra/admin
       const esAdmin = Boolean(
         perfil?.rol === "psicologo" ||
         user.email?.toLowerCase().includes("alejandra") ||
         user.email?.toLowerCase().includes("admin")
       );
 
-      setEsPsicologa(esAdmin);
+      if (!esAdmin) {
+        setLoading(false);
+        setEsPsicologa(false);
+        router.replace("/portal");
+        return;
+      }
+
+      setCurrentUser(user);
+      setEsPsicologa(true);
 
       await recargarDatos(supabase);
       setLoading(false);
@@ -349,8 +358,39 @@ function AdminContent() {
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-[#468189] border-t-transparent rounded-full animate-spin mx-auto mb-4" />
           <p className="text-sm font-semibold text-[#031926]">
-            Cargando Panel de Alejandra Bedoya...
+            Verificando credenciales de seguridad...
           </p>
+        </div>
+      </div>
+    );
+  }
+
+  // BLOQUEO ABSOLUTO: Si no está autenticada o no tiene rol de psicóloga, NO renderizar el panel
+  if (!currentUser || !esPsicologa) {
+    return (
+      <div className="min-h-screen bg-[#FBF8F1] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-3xl p-8 border border-rose-200 shadow-xl text-center space-y-4">
+          <div className="w-16 h-16 rounded-2xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto shadow-xs">
+            <Lock className="w-8 h-8" />
+          </div>
+          <h2 className="text-xl font-bold text-[#031926]">Acceso Restringido</h2>
+          <p className="text-xs text-[#031926]/70 leading-relaxed">
+            Esta sección es confidencial y de uso exclusivo para la especialista <strong>Alejandra Bedoya</strong>. Se requiere autenticación autorizada para ingresar.
+          </p>
+          <div className="pt-2 flex flex-col gap-2">
+            <Link
+              href="/login"
+              className="w-full py-2.5 px-4 rounded-xl bg-[#468189] hover:bg-[#031926] text-white font-semibold text-xs shadow-md transition"
+            >
+              Iniciar Sesión como Especialista
+            </Link>
+            <Link
+              href="/"
+              className="w-full py-2.5 px-4 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926]/70 font-semibold hover:bg-[#FBF8F1] transition"
+            >
+              Volver a la Página Principal
+            </Link>
+          </div>
         </div>
       </div>
     );
