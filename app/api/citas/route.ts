@@ -26,9 +26,31 @@ export async function POST(request: NextRequest) {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    // Generar enlace de Google Meet si es modalidad virtual
+    // Obtener o generar enlace de Google Meet si es modalidad virtual
     const esVirtual = modalidad !== "presencial";
-    const enlace_reunion = esVirtual ? generarEnlaceMeet() : null;
+    let enlace_reunion: string | null = null;
+
+    if (esVirtual) {
+      // 1. Revisar si el especialista tiene configurada su sala oficial de Google Meet
+      if (psicologo_id) {
+        try {
+          const { data: perfilPsico } = await client
+            .from("perfiles")
+            .select("disponibilidad")
+            .eq("id", psicologo_id)
+            .single();
+
+          if (perfilPsico?.disponibilidad?.enlace_meet_personal) {
+            enlace_reunion = perfilPsico.disponibilidad.enlace_meet_personal;
+          }
+        } catch {}
+      }
+
+      // 2. Si no tiene sala permanente configurada, generar un enlace de Google Meet
+      if (!enlace_reunion) {
+        enlace_reunion = generarEnlaceMeet();
+      }
+    }
 
     // Intentar insertar con psicologo_id
     const payloadConPsico: any = {

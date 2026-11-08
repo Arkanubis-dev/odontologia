@@ -12,6 +12,7 @@ const DEFAULT_DISPONIBILIDAD = {
   hora_fin: "18:00",
   duracion_minutos: 50,
   intervalo_minutos: 60,
+  enlace_meet_personal: "",
 };
 
 export async function GET(request: NextRequest) {
