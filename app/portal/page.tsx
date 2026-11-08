@@ -157,13 +157,29 @@ function PortalContent() {
         rol: perfilData?.rol,
       });
 
-      // Cargar datos reales desde Supabase
+      // Cargar datos reales desde Supabase estrictamente del consultante autenticado
       try {
         const [citasRes, tareasRes, animoRes, califRes] = await Promise.all([
-          supabase.from("citas").select("*").order("fecha_hora", { ascending: true }),
-          supabase.from("tareas_terapia").select("*").order("creado_en", { ascending: false }),
-          supabase.from("registro_emocional").select("*").order("creado_en", { ascending: false }).limit(10),
-          supabase.from("calificaciones").select("*").eq("paciente_id", authUser.id),
+          supabase
+            .from("citas")
+            .select("*")
+            .eq("paciente_id", authUser.id)
+            .order("fecha_hora", { ascending: true }),
+          supabase
+            .from("tareas_terapia")
+            .select("*")
+            .eq("paciente_id", authUser.id)
+            .order("creado_en", { ascending: false }),
+          supabase
+            .from("registro_emocional")
+            .select("*")
+            .eq("paciente_id", authUser.id)
+            .order("creado_en", { ascending: false })
+            .limit(10),
+          supabase
+            .from("calificaciones")
+            .select("*")
+            .eq("paciente_id", authUser.id),
         ]);
 
         if (califRes.data && califRes.data.length > 0) {
@@ -221,43 +237,19 @@ function PortalContent() {
             }))
           );
         } else {
-          // Si es usuario nuevo sin citas, poner ejemplo
-          setCitas([
-            {
-              id: "demo-1",
-              fecha_hora: new Date(Date.now() + 86400000 * 2).toISOString(),
-              modalidad: "virtual",
-              enlace_reunion: "https://meet.google.com/psicologia-sesion",
-              estado: "confirmada",
-              notas_paciente: "Sesión de seguimiento terapéutico",
-              psicologo: psicosList[0],
-            },
-          ]);
+          setCitas([]);
         }
 
         if (tareasRes.data && tareasRes.data.length > 0) {
           setTareas(tareasRes.data);
         } else {
-          setTareas([
-            {
-              id: "task-1",
-              titulo: "Registro de pensamientos automáticos",
-              descripcion: "Anota en un cuaderno o aquí cuando sientas una emoción intensa durante el día.",
-              fecha_limite: "En 3 días",
-              completada: false,
-            },
-            {
-              id: "task-2",
-              titulo: "Técnica de respiración 4-7-8",
-              descripcion: "Realizar 5 minutos antes de dormir para reducir la tensión corporal.",
-              fecha_limite: "Diario",
-              completada: true,
-            },
-          ]);
+          setTareas([]);
         }
 
         if (animoRes.data) {
           setRegistrosEmocionales(animoRes.data);
+        } else {
+          setRegistrosEmocionales([]);
         }
       } catch (err) {
         console.error("Error al cargar datos:", err);
@@ -695,26 +687,33 @@ function PortalContent() {
                         {horaFormateada}
                       </p>
 
-                      {/* Especialista Asignado */}
-                      <div className="flex items-center gap-2.5 py-2 px-3 rounded-xl bg-[#FBF8F1] border border-[#9DBEBB]/30 mb-3">
-                        <div className="w-8 h-8 rounded-full bg-[#031926] text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden border border-[#77ACA2]/50">
-                          {cita.psicologo?.avatar_url ? (
-                            <img src={cita.psicologo.avatar_url} alt="" className="w-full h-full object-cover" />
-                          ) : (cita.psicologo?.email?.toLowerCase().includes("alejandra") || !cita.psicologo) ? (
-                            <img
-                              src="/alejandra-bedoya.jpg"
-                              alt="Alejandra Bedoya"
-                              className="w-full h-full object-cover object-top"
-                            />
-                          ) : (
-                            <span>{(cita.psicologo?.nombre_completo || cita.psicologo?.email || "P").charAt(0).toUpperCase()}</span>
-                          )}
-                        </div>
-                        <div>
-                          <p className="text-xs font-bold text-[#031926]">
-                            {cita.psicologo?.nombre_completo || (cita.psicologo?.email?.toLowerCase().includes("alyson") ? "Alyson López" : "Alejandra Bedoya")}
-                          </p>
-                          <p className="text-[10px] text-[#468189] font-medium">Especialista en Psicología</p>
+                      {/* Especialista que te atenderá */}
+                      <div className="p-3 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/30 mb-3 space-y-1.5">
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#468189] flex items-center gap-1">
+                          <span>🩺</span> Especialista que te atenderá:
+                        </span>
+                        <div className="flex items-center gap-2.5 pt-0.5">
+                          <div className="w-9 h-9 rounded-xl bg-[#031926] text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden border border-[#77ACA2]/50 shadow-2xs">
+                            {cita.psicologo?.avatar_url ? (
+                              <img src={cita.psicologo.avatar_url} alt="" className="w-full h-full object-cover" />
+                            ) : (cita.psicologo?.email?.toLowerCase().includes("alejandra") || !cita.psicologo) ? (
+                              <img
+                                src="/alejandra-bedoya.jpg"
+                                alt="Alejandra Bedoya"
+                                className="w-full h-full object-cover object-top"
+                              />
+                            ) : (
+                              <span>{(cita.psicologo?.nombre_completo || cita.psicologo?.email || "P").charAt(0).toUpperCase()}</span>
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-xs font-bold text-[#031926]">
+                              {cita.psicologo?.nombre_completo || (cita.psicologo?.email?.toLowerCase().includes("alyson") ? "Alyson López" : "Alejandra Bedoya")}
+                            </p>
+                            <p className="text-[10px] text-[#468189] font-medium">
+                              Especialista en Psicología
+                            </p>
+                          </div>
                         </div>
                       </div>
 
