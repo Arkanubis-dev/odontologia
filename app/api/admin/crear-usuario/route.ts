@@ -62,33 +62,43 @@ export async function POST(request: NextRequest) {
 
     if (!callerUser) {
       return NextResponse.json(
-        { error: "No autenticado. Por favor inicia sesión como administrador." },
+        { error: "No autenticado. Por favor inicia sesión como administrador o especialista." },
         { status: 401 }
       );
     }
 
-    // Verificar si es Super Admin (brayancamilo2407@gmail.com o rol admin/superadmin)
+    // Verificar permisos en la base de datos
     const esMasterEmail = callerUser.email?.toLowerCase() === "brayancamilo2407@gmail.com";
-    let esAdminDb = false;
+    let callerRol = "paciente";
 
-    if (!esMasterEmail) {
-      const checkSupabase = serverSupabase || createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-        auth: { autoRefreshToken: false, persistSession: false },
-      });
-      const { data: perfilCaller } = await checkSupabase
-        .from("perfiles")
-        .select("rol")
-        .eq("id", callerUser.id)
-        .single();
+    const dbClient = createSupabaseClient(supabaseUrl, serviceRoleKey || supabaseAnonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data: perfilCaller } = await dbClient
+      .from("perfiles")
+      .select("rol")
+      .eq("id", callerUser.id)
+      .maybeSingle();
 
-      if (perfilCaller?.rol === "admin" || perfilCaller?.rol === "superadmin") {
-        esAdminDb = true;
-      }
+    if (perfilCaller?.rol) {
+      callerRol = perfilCaller.rol;
     }
 
-    if (!esMasterEmail && !esAdminDb) {
+    const puedeCrearCualquiera = esMasterEmail || callerRol === "admin" || callerRol === "superadmin";
+    const esEspecialista = callerRol === "psicologo";
+
+    if (!puedeCrearCualquiera && !esEspecialista) {
       return NextResponse.json(
-        { error: "Acceso denegado. Solo el Super Administrador puede crear usuarios locales." },
+        { error: "Acceso denegado. No tienes permisos para crear usuarios." },
+        { status: 403 }
+      );
+    }
+
+    // Si es psicóloga y no admin, solo puede crear pacientes
+    const rolDeseado = rol || "paciente";
+    if (esEspecialista && !puedeCrearCualquiera && rolDeseado !== "paciente") {
+      return NextResponse.json(
+        { error: "Como especialista solo puedes crear cuentas para consultantes/pacientes." },
         { status: 403 }
       );
     }
@@ -174,32 +184,17 @@ export async function POST(request: NextRequest) {
       newUserId = createdData.user?.id || null;
       newUserEmail = createdData.user?.email || null;
 
-      // Actualizar perfil usando la sesión del Super Admin
-      if (newUserId && serverSupabase) {
-        // Pequeño retardo para asegurar que el trigger on_auth_user_created haya corrido
+      // Actualizar perfil asegurando que quede guardado en la base de datos
+      if (newUserId) {
         await new Promise((resolve) => setTimeout(resolve, 350));
-
-        const { error: updateErr } = await serverSupabase
-          .from("perfiles")
-          .update({
-            rol: rol || "paciente",
-            telefono: telefono?.trim() || null,
-            nombre_completo: nombre_completo?.trim() || email.split("@")[0],
-            actualizado_en: new Date().toISOString(),
-          })
-          .eq("id", newUserId);
-
-        // Si falló el update (por ejemplo si el trigger no creó la fila a tiempo), intentar upsert
-        if (updateErr) {
-          await serverSupabase.from("perfiles").upsert({
-            id: newUserId,
-            email: newUserEmail || email.trim().toLowerCase(),
-            nombre_completo: nombre_completo?.trim() || email.split("@")[0],
-            rol: rol || "paciente",
-            telefono: telefono?.trim() || null,
-            actualizado_en: new Date().toISOString(),
-          });
-        }
+        await dbClient.from("perfiles").upsert({
+          id: newUserId,
+          email: newUserEmail || email.trim().toLowerCase(),
+          nombre_completo: nombre_completo?.trim() || email.split("@")[0],
+          rol: rol || "paciente",
+          telefono: telefono?.trim() || null,
+          actualizado_en: new Date().toISOString(),
+        });
       }
     }
 

@@ -6,7 +6,8 @@ const DEFAULT_SUPABASE_ANON_KEY = "sb_publishable_TbhqlbTXXbwf89J1W4SvuQ_lvUG0jv
 
 export async function POST(request: NextRequest) {
   try {
-    const { email, password, full_name } = await request.json();
+    const body = await request.json();
+    const { email, password, full_name, nombre_completo } = body;
 
     if (!email || !password) {
       return NextResponse.json(
@@ -22,6 +23,8 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const cleanEmail = email.trim().toLowerCase();
+    const displayName = (nombre_completo || full_name || cleanEmail.split("@")[0]).trim();
     const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || DEFAULT_SUPABASE_ANON_KEY;
     const supabaseUrl = rawUrl.replace(/\/rest\/v1\/?$/, "").replace(/\/+$/, "");
@@ -33,11 +36,11 @@ export async function POST(request: NextRequest) {
       });
 
       const { data: newUser, error: createError } = await adminClient.auth.admin.createUser({
-        email: email.trim().toLowerCase(),
+        email: cleanEmail,
         password,
         email_confirm: true,
         user_metadata: {
-          full_name: full_name || email.split("@")[0],
+          full_name: displayName,
           rol: "paciente",
         },
       });
@@ -52,12 +55,12 @@ export async function POST(request: NextRequest) {
         return NextResponse.json({ error: createError.message }, { status: 400 });
       }
 
-      // Asegurar perfil
+      // Asegurar perfil inmediatamente en public.perfiles
       if (newUser?.user?.id) {
         await adminClient.from("perfiles").upsert({
           id: newUser.user.id,
-          email: email.trim().toLowerCase(),
-          nombre_completo: full_name || email.split("@")[0],
+          email: cleanEmail,
+          nombre_completo: displayName,
           rol: "paciente",
           actualizado_en: new Date().toISOString(),
         });
@@ -72,11 +75,11 @@ export async function POST(request: NextRequest) {
     });
 
     const { data: signUpData, error: signUpError } = await tempClient.auth.signUp({
-      email: email.trim().toLowerCase(),
+      email: cleanEmail,
       password,
       options: {
         data: {
-          full_name: full_name || email.split("@")[0],
+          full_name: displayName,
         },
       },
     });

@@ -3,11 +3,12 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Brain, ArrowLeft, Mail, Lock, ShieldCheck, Sparkles, AlertCircle } from "lucide-react";
+import { Brain, ArrowLeft, Mail, Lock, ShieldCheck, Sparkles, AlertCircle, User } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [nombre, setNombre] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -53,8 +54,14 @@ export default function LoginPage() {
   // Iniciar sesión o registrarse con correo y contraseña
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
+    const cleanEmail = email.trim().toLowerCase();
+    if (!cleanEmail || !password) {
       setErrorMsg("Por favor completa tu correo y contraseña.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setErrorMsg("La contraseña debe tener al menos 6 caracteres.");
       return;
     }
 
@@ -63,63 +70,67 @@ export default function LoginPage() {
 
     try {
       const supabase = createClient();
-      if (!supabase) {
-        setErrorMsg("Supabase no está configurado.");
-        setLoading(false);
-        return;
-      }
 
       if (isSignUp) {
+        // 1. Registrar usuario en la base de datos
         const res = await fetch("/api/auth/register", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
+          body: JSON.stringify({
+            email: cleanEmail,
+            password,
+            full_name: nombre.trim() || cleanEmail.split("@")[0],
+          }),
         });
 
         const regData = await res.json();
         if (!res.ok) throw new Error(regData.error || "No se pudo crear la cuenta");
 
-        // Iniciar sesión automáticamente
-        const { error: signInErr } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+        // 2. Iniciar sesión automáticamente en el servidor
+        const loginRes = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cleanEmail, password }),
         });
 
-        if (signInErr) {
-          alert("¡Cuenta creada exitosamente! Ya puedes iniciar sesión.");
-          setIsSignUp(false);
-          setLoading(false);
-          return;
+        const loginData = await loginRes.json();
+        if (!loginRes.ok) throw new Error(loginData.error || "Error al iniciar sesión tras registrarse");
+
+        // 3. Sincronizar sesión en el cliente
+        if (supabase) {
+          try {
+            await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+          } catch {
+            // Ignorable si el servidor ya asignó las cookies
+          }
         }
 
-        router.replace("/portal");
+        // Navegación completa para asegurar la transmisión de cookies HTTP
+        window.location.href = loginData.redirectTo || "/portal";
         return;
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+        // Iniciar sesión con el endpoint del servidor (maneja auto-confirmación y cookies seguras)
+        const res = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: cleanEmail, password }),
         });
-        if (error) throw error;
 
-        // Comprobar si el usuario es psicóloga/administrador
-        const { data: perfil } = await supabase
-          .from("perfiles")
-          .select("rol")
-          .eq("id", data.user?.id)
-          .single();
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Credenciales incorrectas");
 
-        if (
-          perfil?.rol === "psicologo" ||
-          perfil?.rol === "admin" ||
-          perfil?.rol === "superadmin" ||
-          email.toLowerCase() === "brayancamilo2407@gmail.com" ||
-          email.toLowerCase().includes("alejandra") ||
-          email.toLowerCase().includes("admin")
-        ) {
-          router.push("/admin");
-        } else {
-          router.push("/portal");
+        // Sincronizar en el cliente
+        if (supabase) {
+          try {
+            await supabase.auth.signInWithPassword({ email: cleanEmail, password });
+          } catch {
+            // Ignorable
+          }
         }
+
+        // Redirigir al destino correspondiente
+        window.location.href = data.redirectTo || "/portal";
+        return;
       }
     } catch (err: any) {
       setErrorMsg(err.message || "Error en la autenticación.");
@@ -214,6 +225,24 @@ export default function LoginPage() {
 
           {/* Formulario Correo / Contraseña */}
           <form onSubmit={handleEmailAuth} className="space-y-4">
+            {isSignUp && (
+              <div>
+                <label className="block text-xs font-semibold text-[#031926] mb-1">
+                  Nombre completo
+                </label>
+                <div className="relative">
+                  <User className="w-4 h-4 text-[#77ACA2] absolute left-3.5 top-3" />
+                  <input
+                    type="text"
+                    value={nombre}
+                    onChange={(e) => setNombre(e.target.value)}
+                    placeholder="Tu nombre y apellidos"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#9DBEBB]/60 text-sm text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189] focus:border-transparent bg-white"
+                  />
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="block text-xs font-semibold text-[#031926] mb-1">
                 Correo electrónico
