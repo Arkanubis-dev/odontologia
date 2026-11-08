@@ -625,24 +625,50 @@ function AdminContent() {
     }
   };
 
-  // Generar Google Meet para una cita existente
+  // Asignar o crear Google Meet real para una cita existente
   const handleGenerarMeet = async (citaId: string) => {
-    try {
-      const res = await fetch(`/api/citas/${citaId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ generar_nuevo_meet: true }),
-      });
+    let enlaceAUsar = enlaceMeetPersonal.trim();
 
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "No se pudo generar el enlace Meet");
+    if (!enlaceAUsar && currentUser?.id) {
+      try {
+        const res = await fetch(`/api/admin/disponibilidad?psicologo_id=${currentUser.id}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.disponibilidad?.enlace_meet_personal) {
+            enlaceAUsar = json.disponibilidad.enlace_meet_personal.trim();
+            setEnlaceMeetPersonal(enlaceAUsar);
+          }
+        }
+      } catch {}
+    }
 
-      setCitas((prev) =>
-        prev.map((c) => (c.id === citaId ? { ...c, enlace_reunion: data.cita.enlace_reunion } : c))
-      );
-      alert("¡Enlace de Google Meet generado y asignado!");
-    } catch (err: any) {
-      alert("Error al generar Meet: " + err.message);
+    if (enlaceAUsar) {
+      try {
+        const res = await fetch(`/api/citas/${citaId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ enlace_reunion: enlaceAUsar }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "No se pudo asignar el enlace Meet");
+
+        setCitas((prev) =>
+          prev.map((c) => (c.id === citaId ? { ...c, enlace_reunion: enlaceAUsar } : c))
+        );
+        alert("¡Tu sala oficial de Google Meet ha sido asignada a esta cita!");
+        return;
+      } catch (err: any) {
+        alert("Error al asignar Meet: " + err.message);
+        return;
+      }
+    }
+
+    // Si aún no tiene sala permanente configurada, abrir modal para editar y ofrecer crear sala real
+    const citaObj = citas.find((c) => c.id === citaId);
+    if (citaObj) {
+      setCitaParaEditar(citaObj);
+      setNuevoEnlace("");
     }
   };
 
@@ -2356,30 +2382,94 @@ function AdminContent() {
       {/* MODAL: EDITAR ENLACE DE REUNIÓN VIRTUAL */}
       {citaParaEditar && (
         <div className="fixed inset-0 z-50 bg-[#031926]/50 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-[#9DBEBB]/40">
-            <h3 className="text-lg font-bold text-[#031926] mb-1">
-              Enlace de Sesión Virtual
-            </h3>
-            <p className="text-xs text-[#031926]/70 mb-4">
-              Ingresa el enlace de Google Meet o Zoom para que tu paciente pueda unirse a la sesión.
-            </p>
+          <div className="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-7 shadow-2xl border border-[#9DBEBB]/40 space-y-4">
+            <div className="flex items-center justify-between pb-3 border-b border-[#9DBEBB]/30">
+              <div className="flex items-center gap-2.5">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200 shadow-2xs">
+                  <Video className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-[#031926]">
+                    Enlace de Sesión Virtual (Google Meet)
+                  </h3>
+                  <p className="text-xs text-[#031926]/70">
+                    Consultante: {citaParaEditar.paciente?.nombre_completo || citaParaEditar.paciente?.email || "Paciente"}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCitaParaEditar(null)}
+                className="text-gray-400 hover:text-[#031926] p-1.5 cursor-pointer rounded-xl hover:bg-gray-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            {/* Opciones rápidas para enlaces 100% reales de Google Meet */}
+            <div className="p-3.5 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/40 space-y-2.5">
+              <span className="text-[11px] font-bold text-[#468189] uppercase tracking-wider block">
+                Generar o asignar reunión auténtica:
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {enlaceMeetPersonal && (
+                  <button
+                    type="button"
+                    onClick={() => setNuevoEnlace(enlaceMeetPersonal)}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold transition cursor-pointer shadow-2xs"
+                  >
+                    <Check className="w-3.5 h-3.5" />
+                    <span>Usar mi sala oficial de Meet</span>
+                  </button>
+                )}
+
+                <a
+                  href="https://meet.google.com/new"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition cursor-pointer shadow-2xs"
+                >
+                  <ExternalLink className="w-3.5 h-3.5" />
+                  <span>Crear nueva sala en Google Meet ↗</span>
+                </a>
+              </div>
+              <p className="text-[10px] text-gray-500 leading-relaxed">
+                💡 Haz clic en <strong>"Crear nueva sala"</strong> para abrir Google Meet en tu cuenta de Google. Google generará una reunión real; copia el enlace de la barra del navegador y pégalo abajo.
+              </p>
+            </div>
 
             <form onSubmit={handleGuardarEnlace} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#031926] mb-1">
-                  Enlace de Videollamada
-                </label>
-                <input
-                  type="url"
-                  required
-                  placeholder="https://meet.google.com/xyz-abc-def"
-                  value={nuevoEnlace}
-                  onChange={(e) => setNuevoEnlace(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
-                />
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-xs font-semibold text-[#031926]">
+                    Enlace de Google Meet para la Sesión
+                  </label>
+                  {nuevoEnlace && (
+                    <a
+                      href={nuevoEnlace}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[11px] font-bold text-emerald-700 hover:underline flex items-center gap-1"
+                    >
+                      <span>Probar enlace</span>
+                      <ExternalLink className="w-3 h-3" />
+                    </a>
+                  )}
+                </div>
+                <div className="relative">
+                  <Video className="w-4 h-4 text-[#77ACA2] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="url"
+                    required
+                    placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                    value={nuevoEnlace}
+                    onChange={(e) => setNuevoEnlace(e.target.value)}
+                    className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189] font-mono bg-white"
+                  />
+                </div>
               </div>
 
-              <div className="flex gap-2 pt-2">
+              <div className="flex gap-2 pt-2 border-t border-[#9DBEBB]/30">
                 <button
                   type="button"
                   onClick={() => setCitaParaEditar(null)}
@@ -2471,30 +2561,60 @@ function AdminContent() {
               </div>
 
               {citaParaReprogramar.modalidad === "virtual" && (
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-semibold text-[#031926]">
-                      Enlace Google Meet
+                <div className="space-y-2 p-3.5 bg-[#FBF8F1] rounded-2xl border border-[#9DBEBB]/40">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label className="block text-xs font-bold text-[#031926]">
+                      Enlace de Google Meet (Reunión Virtual)
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const randomMeet = `https://meet.google.com/${Math.random().toString(36).substring(2, 5)}-${Math.random().toString(36).substring(2, 6)}-${Math.random().toString(36).substring(2, 5)}`;
-                        setReprogramarEnlace(randomMeet);
-                      }}
-                      className="text-[11px] font-bold text-[#468189] hover:underline flex items-center gap-1 cursor-pointer"
-                    >
-                      <Sparkles className="w-3 h-3 text-amber-500" />
-                      Generar Nuevo Meet
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {enlaceMeetPersonal && (
+                        <button
+                          type="button"
+                          onClick={() => setReprogramarEnlace(enlaceMeetPersonal)}
+                          className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-700 hover:underline cursor-pointer"
+                        >
+                          <Check className="w-3 h-3 text-emerald-600" />
+                          <span>Usar mi Meet oficial</span>
+                        </button>
+                      )}
+                      <a
+                        href="https://meet.google.com/new"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-600 hover:underline cursor-pointer"
+                        title="Abre Google Meet para generar una sala auténtica"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        <span>Crear sala en Google Meet ↗</span>
+                      </a>
+                    </div>
                   </div>
-                  <input
-                    type="url"
-                    value={reprogramarEnlace}
-                    onChange={(e) => setReprogramarEnlace(e.target.value)}
-                    placeholder="https://meet.google.com/xxx-yyyy-zzz"
-                    className="w-full p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
-                  />
+
+                  <div className="relative">
+                    <Video className="w-4 h-4 text-[#77ACA2] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="url"
+                      value={reprogramarEnlace}
+                      onChange={(e) => setReprogramarEnlace(e.target.value)}
+                      placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                      className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189] font-mono bg-white"
+                    />
+                  </div>
+
+                  {reprogramarEnlace && (
+                    <div className="flex items-center justify-between text-[10px] text-gray-500 pt-0.5">
+                      <span>Verifica que la reunión funcione:</span>
+                      <a
+                        href={reprogramarEnlace}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-emerald-700 font-bold hover:underline flex items-center gap-1"
+                      >
+                        <span>Probar enlace de Google Meet</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
+                  )}
                 </div>
               )}
 

@@ -30,7 +30,28 @@ export async function PATCH(
     if (notas_paciente !== undefined) updateData.notas_paciente = notas_paciente;
 
     if (generar_nuevo_meet) {
-      updateData.enlace_reunion = generarEnlaceMeet();
+      let meetReal: string | null = null;
+      try {
+        const { data: citaActual } = await client
+          .from("citas")
+          .select("psicologo_id")
+          .eq("id", id)
+          .single();
+
+        if (citaActual?.psicologo_id) {
+          const { data: perfilPsico } = await client
+            .from("perfiles")
+            .select("disponibilidad")
+            .eq("id", citaActual.psicologo_id)
+            .single();
+
+          if (perfilPsico?.disponibilidad?.enlace_meet_personal) {
+            meetReal = perfilPsico.disponibilidad.enlace_meet_personal;
+          }
+        }
+      } catch {}
+
+      updateData.enlace_reunion = meetReal || generarEnlaceMeet();
     } else if (enlace_reunion !== undefined) {
       updateData.enlace_reunion = enlace_reunion;
     }
