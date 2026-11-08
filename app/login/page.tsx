@@ -26,10 +26,17 @@ export default function LoginPage() {
         return;
       }
 
+      // Determinar el origen exacto (localhost solo en desarrollo local, de lo contrario Vercel)
+      const origin =
+        typeof window !== "undefined" &&
+        (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+          ? window.location.origin
+          : "https://psicologia-aleja.vercel.app";
+
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${origin}/auth/callback`,
         },
       });
 

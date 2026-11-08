@@ -47,7 +47,8 @@ export async function middleware(request: NextRequest) {
   // 1. Proteger estrictamente la ruta /admin (Solo psicóloga)
   if (request.nextUrl.pathname.startsWith("/admin")) {
     if (!user) {
-      const redirectUrl = new URL("/login", request.url);
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/login";
       redirectUrl.searchParams.set("redirect", "/admin");
       return NextResponse.redirect(redirectUrl);
     }
@@ -70,7 +71,10 @@ export async function middleware(request: NextRequest) {
 
     if (!esAdmin) {
       // Usuario autenticado pero es un paciente común: redirigir a su portal
-      return NextResponse.redirect(new URL("/portal", request.url));
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/portal";
+      redirectUrl.search = "";
+      return NextResponse.redirect(redirectUrl);
     }
   }
 
@@ -78,7 +82,8 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/portal")) {
     const isDemo = request.nextUrl.searchParams.get("demo") === "true";
     if (!user && !isDemo) {
-      const redirectUrl = new URL("/login", request.url);
+      const redirectUrl = request.nextUrl.clone();
+      redirectUrl.pathname = "/login";
       redirectUrl.searchParams.set("redirect", "/portal");
       return NextResponse.redirect(redirectUrl);
     }
