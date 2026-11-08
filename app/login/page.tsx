@@ -76,12 +76,28 @@ export default function LoginPage() {
         alert("¡Cuenta creada con éxito! Ya puedes iniciar sesión.");
         setIsSignUp(false);
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         if (error) throw error;
-        router.push("/portal");
+
+        // Comprobar si el usuario es psicóloga/administrador
+        const { data: perfil } = await supabase
+          .from("perfiles")
+          .select("rol")
+          .eq("id", data.user?.id)
+          .single();
+
+        if (
+          perfil?.rol === "psicologo" ||
+          email.toLowerCase().includes("alejandra") ||
+          email.toLowerCase().includes("admin")
+        ) {
+          router.push("/admin");
+        } else {
+          router.push("/portal");
+        }
       }
     } catch (err: any) {
       setErrorMsg(err.message || "Error en la autenticación.");

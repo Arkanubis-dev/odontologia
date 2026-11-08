@@ -9,8 +9,23 @@ export async function GET(request: Request) {
   if (code) {
     const supabase = await createClient();
     if (supabase) {
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
-      if (!error) {
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+      if (!error && data.user) {
+        // Redirigir a panel de psicóloga si corresponde
+        const { data: perfil } = await supabase
+          .from("perfiles")
+          .select("rol")
+          .eq("id", data.user.id)
+          .single();
+
+        if (
+          perfil?.rol === "psicologo" ||
+          data.user.email?.toLowerCase().includes("alejandra") ||
+          data.user.email?.toLowerCase().includes("admin")
+        ) {
+          return NextResponse.redirect(`${origin}/admin`);
+        }
+
         return NextResponse.redirect(`${origin}${next}`);
       }
     }

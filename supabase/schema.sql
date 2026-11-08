@@ -25,7 +25,7 @@ create table if not exists public.citas (
   fecha_hora timestamp with time zone not null,
   modalidad text check (modalidad in ('virtual', 'presencial')) default 'virtual',
   enlace_reunion text,
-  estado text check (estado in ('pendiente', 'confirmada', 'completada', 'cancelada')) default 'confirmada',
+  estado text check (estado in ('pendiente', 'confirmada', 'completada', 'cancelada', 'finalizado')) default 'confirmada',
   notas_paciente text,
   creado_en timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -67,8 +67,19 @@ create table if not exists public.calificaciones (
 );
 
 -- ========================================================
+-- FUNCION HELPER DE SEGURIDAD (Evita recursión en RLS)
+-- ========================================================
+create or replace function public.es_psicologo(user_id uuid)
+returns boolean as $$
+  select exists (
+    select 1 from public.perfiles
+    where id = user_id and rol = 'psicologo'
+  );
+$$ language sql security definer;
+
+-- ========================================================
 -- SEGURIDAD: ROW LEVEL SECURITY (RLS)
--- Cada paciente solo puede ver y editar sus propios datos
+-- Pacientes ven lo propio; la Psicóloga gestiona todo el consultorio
 -- ========================================================
 
 alter table public.perfiles enable row level security;
@@ -77,11 +88,65 @@ alter table public.tareas_terapia enable row level security;
 alter table public.registro_emocional enable row level security;
 alter table public.calificaciones enable row level security;
 
+-- Políticas para PERFILES
+drop policy if exists "Los usuarios pueden ver su propio perfil" on public.perfiles;
+create policy "Los usuarios pueden ver su propio perfil"
+  on public.perfiles for select
+  using (auth.uid() = id or public.es_psicologo(auth.uid()));
+
+drop policy if exists "Los usuarios pueden actualizar su propio perfil" on public.perfiles;
+create policy "Los usuarios pueden actualizar su propio perfil"
+  on public.perfiles for update
+  using (auth.uid() = id or public.es_psicologo(auth.uid()));
+
+-- Políticas para CITAS
+drop policy if exists "Los pacientes pueden ver sus propias citas" on public.citas;
+create policy "Los pacientes pueden ver sus propias citas"
+  on public.citas for select
+  using (auth.uid() = paciente_id or public.es_psicologo(auth.uid()));
+
+drop policy if exists "Los pacientes pueden solicitar/crear sus citas" on public.citas;
+create policy "Los pacientes pueden solicitar/crear sus citas"
+  on public.citas for insert
+  with check (auth.uid() = paciente_id or public.es_psicologo(auth.uid()));
+
+drop policy if exists "Psicologa y pacientes pueden actualizar citas" on public.citas;
+create policy "Psicologa y pacientes pueden actualizar citas"
+  on public.citas for update
+  using (auth.uid() = paciente_id or public.es_psicologo(auth.uid()));
+
+-- Políticas para TAREAS DE TERAPIA
+drop policy if exists "Los pacientes pueden ver sus tareas" on public.tareas_terapia;
+create policy "Los pacientes pueden ver sus tareas"
+  on public.tareas_terapia for select
+  using (auth.uid() = paciente_id or public.es_psicologo(auth.uid()));
+
+drop policy if exists "Los pacientes pueden actualizar sus tareas" on public.tareas_terapia;
+create policy "Los pacientes pueden actualizar sus tareas"
+  on public.tareas_terapia for update
+  using (auth.uid() = paciente_id or public.es_psicologo(auth.uid()));
+
+drop policy if exists "Permitir insertar tareas" on public.tareas_terapia;
+create policy "Permitir insertar tareas"
+  on public.tareas_terapia for insert
+  with check (auth.uid() = paciente_id or public.es_psicologo(auth.uid()));
+
+-- Políticas para REGISTRO EMOCIONAL
+drop policy if exists "Los pacientes pueden ver su registro emocional" on public.registro_emocional;
+create policy "Los pacientes pueden ver su registro emocional"
+  on public.registro_emocional for select
+  using (auth.uid() = paciente_id or public.es_psicologo(auth.uid()));
+
+drop policy if exists "Los pacientes pueden guardar registros emocionales" on public.registro_emocional;
+create policy "Los pacientes pueden guardar registros emocionales"
+  on public.registro_emocional for insert
+  with check (auth.uid() = paciente_id);
+
 -- Políticas para CALIFICACIONES (Público puede leer para mostrar en la web)
 drop policy if exists "Cualquiera puede leer resenas publicas" on public.calificaciones;
 create policy "Cualquiera puede leer resenas publicas"
   on public.calificaciones for select
-  using (es_publico = true);
+  using (es_publico = true or public.es_psicologo(auth.uid()));
 
 drop policy if exists "Los pacientes pueden calificar sus citas finalizadas" on public.calificaciones;
 create policy "Los pacientes pueden calificar sus citas finalizadas"
@@ -93,55 +158,6 @@ create policy "Los pacientes pueden calificar sus citas finalizadas"
       where id = cita_id and paciente_id = auth.uid() and estado in ('completada', 'finalizado')
     )
   );
-
--- Políticas para PERFILES
-drop policy if exists "Los usuarios pueden ver su propio perfil" on public.perfiles;
-create policy "Los usuarios pueden ver su propio perfil"
-  on public.perfiles for select
-  using (auth.uid() = id);
-
-drop policy if exists "Los usuarios pueden actualizar su propio perfil" on public.perfiles;
-create policy "Los usuarios pueden actualizar su propio perfil"
-  on public.perfiles for update
-  using (auth.uid() = id);
-
--- Políticas para CITAS
-drop policy if exists "Los pacientes pueden ver sus propias citas" on public.citas;
-create policy "Los pacientes pueden ver sus propias citas"
-  on public.citas for select
-  using (auth.uid() = paciente_id);
-
-drop policy if exists "Los pacientes pueden solicitar/crear sus citas" on public.citas;
-create policy "Los pacientes pueden solicitar/crear sus citas"
-  on public.citas for insert
-  with check (auth.uid() = paciente_id);
-
--- Políticas para TAREAS DE TERAPIA
-drop policy if exists "Los pacientes pueden ver sus tareas" on public.tareas_terapia;
-create policy "Los pacientes pueden ver sus tareas"
-  on public.tareas_terapia for select
-  using (auth.uid() = paciente_id);
-
-drop policy if exists "Los pacientes pueden actualizar sus tareas" on public.tareas_terapia;
-create policy "Los pacientes pueden actualizar sus tareas"
-  on public.tareas_terapia for update
-  using (auth.uid() = paciente_id);
-
-drop policy if exists "Permitir insertar tareas" on public.tareas_terapia;
-create policy "Permitir insertar tareas"
-  on public.tareas_terapia for insert
-  with check (auth.uid() = paciente_id);
-
--- Políticas para REGISTRO EMOCIONAL
-drop policy if exists "Los pacientes pueden ver su registro emocional" on public.registro_emocional;
-create policy "Los pacientes pueden ver su registro emocional"
-  on public.registro_emocional for select
-  using (auth.uid() = paciente_id);
-
-drop policy if exists "Los pacientes pueden guardar registros emocionales" on public.registro_emocional;
-create policy "Los pacientes pueden guardar registros emocionales"
-  on public.registro_emocional for insert
-  with check (auth.uid() = paciente_id);
 
 -- ========================================================
 -- TRIGGER AUTOMÁTICO: CREAR PERFIL AL REGISTRARSE

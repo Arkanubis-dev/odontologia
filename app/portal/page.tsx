@@ -67,6 +67,7 @@ function PortalContent() {
     email?: string;
     nombre?: string;
     avatar?: string;
+    rol?: string;
   } | null>(null);
 
   const [activeTab, setActiveTab] = useState<"citas" | "tareas" | "animo" | "perfil">("citas");
@@ -129,11 +130,18 @@ function PortalContent() {
         authUser.email?.split("@")[0] ||
         "Consultante";
 
+      const { data: perfilData } = await supabase
+        .from("perfiles")
+        .select("rol")
+        .eq("id", authUser.id)
+        .single();
+
       setUser({
         id: authUser.id,
         email: authUser.email,
         nombre: nombre,
         avatar: authUser.user_metadata?.avatar_url,
+        rol: perfilData?.rol,
       });
 
       // Cargar datos reales desde Supabase
@@ -411,7 +419,16 @@ function PortalContent() {
           </div>
 
           {/* User info and Logout */}
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 sm:gap-4">
+            {(user?.rol === "psicologo" || user?.email?.toLowerCase().includes("alejandra")) && (
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#468189] text-white text-xs font-bold hover:bg-[#031926] shadow-sm transition"
+              >
+                <span>Panel Profesional</span>
+              </Link>
+            )}
+
             {isDemo && (
               <span className="hidden sm:inline-block px-2.5 py-0.5 bg-[#F4E9CD] text-[#031926] text-xs font-semibold rounded-full border border-[#9DBEBB]/40">
                 Modo Demostración
