@@ -43,6 +43,7 @@ import {
   Send,
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import ChatFlotante from "@/components/ChatFlotante";
 
 interface Perfil {
   id: string;
@@ -2444,9 +2445,9 @@ function AdminContent() {
         )}
         {/* 8. PESTAÑA: MESSENGER / CHAT EN VIVO CON PACIENTES */}
         {tabActiva === "chat" && (
-          <div className="bg-white rounded-3xl border border-[#9DBEBB]/40 shadow-sm overflow-hidden h-[680px] max-h-[80vh] flex flex-col md:flex-row">
+          <div className="bg-white rounded-3xl border border-[#9DBEBB]/40 shadow-sm overflow-hidden h-[calc(100dvh-200px)] min-h-[520px] md:h-[680px] flex flex-col md:flex-row">
             {/* Panel Izquierdo: Lista de Consultantes */}
-            <div className="w-full md:w-80 border-r border-[#9DBEBB]/30 flex flex-col bg-[#FBF8F1]/40">
+            <div className={`w-full md:w-80 border-r border-[#9DBEBB]/30 flex flex-col bg-[#FBF8F1]/40 h-full ${pacienteChatSeleccionado ? "hidden md:flex" : "flex"}`}>
               <div className="p-4 border-b border-[#9DBEBB]/30 bg-white">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-base font-bold text-[#031926] flex items-center gap-2">
@@ -2579,20 +2580,30 @@ function AdminContent() {
             </div>
 
             {/* Panel Derecho: Hilo de Chat */}
-            <div className="flex-1 flex flex-col bg-white">
+            <div className={`flex-1 flex flex-col bg-white h-full ${!pacienteChatSeleccionado ? "hidden md:flex" : "flex"}`}>
               {pacienteChatSeleccionado ? (
                 <>
                   {/* Cabecera del hilo de conversación */}
-                  <div className="p-4 border-b border-[#9DBEBB]/30 flex items-center justify-between bg-white shadow-xs">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-2xl bg-[#468189] text-white flex items-center justify-center font-bold text-sm shadow-xs">
+                  <div className="p-3.5 sm:p-4 border-b border-[#9DBEBB]/30 flex items-center justify-between bg-white shadow-xs shrink-0">
+                    <div className="flex items-center gap-2.5 sm:gap-3">
+                      {/* Botón Volver a la lista de consultantes en móvil */}
+                      <button
+                        type="button"
+                        onClick={() => setPacienteChatSeleccionado(null)}
+                        className="md:hidden p-2 -ml-2 text-[#031926] hover:bg-[#9DBEBB]/20 rounded-xl transition cursor-pointer shrink-0"
+                        title="Volver a conversaciones"
+                      >
+                        <ArrowLeft className="w-5 h-5 text-[#468189]" />
+                      </button>
+
+                      <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#468189] text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-xs shrink-0">
                         {(pacienteChatSeleccionado.nombre_completo || pacienteChatSeleccionado.email).charAt(0).toUpperCase()}
                       </div>
-                      <div>
-                        <h4 className="text-sm font-extrabold text-[#031926]">
+                      <div className="min-w-0">
+                        <h4 className="text-xs sm:text-sm font-extrabold text-[#031926] truncate">
                           {pacienteChatSeleccionado.nombre_completo || pacienteChatSeleccionado.email.split("@")[0]}
                         </h4>
-                        <p className="text-[11px] text-[#031926]/60">
+                        <p className="text-[10px] sm:text-[11px] text-[#031926]/60 truncate">
                           {pacienteChatSeleccionado.rol === "psicologo"
                             ? "🩺 Psicóloga Especialista"
                             : pacienteChatSeleccionado.rol === "superadmin"
@@ -2602,8 +2613,8 @@ function AdminContent() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className="text-[11px] text-[#468189] bg-[#77ACA2]/15 px-3 py-1 rounded-full font-semibold border border-[#77ACA2]/30">
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] sm:text-[11px] text-[#468189] bg-[#77ACA2]/15 px-2.5 sm:px-3 py-1 rounded-full font-semibold border border-[#77ACA2]/30">
                         Sesión Privada
                       </span>
                     </div>
@@ -2668,22 +2679,22 @@ function AdminContent() {
                   {/* Formulario de Respuesta */}
                   <form
                     onSubmit={handleEnviarMensajeAdmin}
-                    className="p-3.5 bg-white border-t border-[#9DBEBB]/30 flex items-center gap-2"
+                    className="p-3 sm:p-3.5 bg-white border-t border-[#9DBEBB]/30 flex items-center gap-2 shrink-0 pb-[max(0.75rem,env(safe-area-inset-bottom))]"
                   >
                     <input
                       type="text"
                       value={textoMensajeChat}
                       onChange={(e) => setTextoMensajeChat(e.target.value)}
                       placeholder={`Escribe un mensaje para ${pacienteChatSeleccionado.nombre_completo || "el consultante"}...`}
-                      className="flex-1 bg-[#FBF8F1] border border-[#9DBEBB]/50 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
+                      className="flex-1 bg-[#FBF8F1] border border-[#9DBEBB]/50 rounded-2xl px-4 py-2.5 text-base md:text-sm text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
                     />
                     <button
                       type="submit"
                       disabled={enviandoMensajeChat || !textoMensajeChat.trim()}
-                      className="px-5 py-2.5 rounded-2xl bg-[#031926] hover:bg-[#468189] text-white text-xs sm:text-sm font-bold flex items-center gap-2 transition disabled:opacity-40 cursor-pointer shrink-0 shadow-md"
+                      className="px-4 sm:px-5 py-2.5 rounded-2xl bg-[#031926] hover:bg-[#468189] text-white text-xs sm:text-sm font-bold flex items-center gap-2 transition disabled:opacity-40 cursor-pointer shrink-0 shadow-md"
                     >
                       <Send className="w-4 h-4" />
-                      <span>Enviar</span>
+                      <span className="hidden sm:inline">Enviar</span>
                     </button>
                   </form>
                 </>
@@ -3223,6 +3234,39 @@ function AdminContent() {
           </div>
         </div>
       )}
+
+      {/* Messenger Flotante disponible en todo el panel de administración cuando no esté en la pestaña de chat */}
+      {currentUser?.id && tabActiva !== "chat" && (() => {
+        const disponibles = pacientes
+          .filter((p) => p.id !== currentUser.id)
+          .map((p) => ({
+            id: p.id,
+            nombre: p.nombre_completo || p.email,
+            email: p.email,
+            avatar: p.avatar_url,
+            rol: p.rol === "psicologo" ? "Psicóloga" : p.rol === "superadmin" ? "Super Admin" : "Consultante",
+          }));
+
+        const espDefault =
+          disponibles.find((p) => p.rol === "Psicóloga" || (p.email && p.email.includes("alyson"))) ||
+          disponibles[0];
+
+        return (
+          <ChatFlotante
+            usuarioActual={{
+              id: currentUser.id,
+              nombre:
+                currentUserPerfil?.nombre_completo ||
+                currentUser?.user_metadata?.full_name ||
+                currentUser.email?.split("@")[0] ||
+                "Administrador",
+              email: currentUser.email,
+            }}
+            especialista={espDefault}
+            especialistasDisponibles={disponibles}
+          />
+        );
+      })()}
     </div>
   );
 }

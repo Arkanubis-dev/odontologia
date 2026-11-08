@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MessageSquare, Send, Minimize2, Check, Clock, ChevronDown, User } from "lucide-react";
+import { MessageSquare, Send, Minimize2, Check, Clock, ChevronDown, ArrowLeft, X } from "lucide-react";
 
 interface Mensaje {
   id: string;
@@ -80,6 +80,7 @@ export default function ChatFlotante({
   const especialistaNombre = especialistaActivo.nombre || "Dra. Alyson López";
 
   const mensajesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   // Auto-scroll al último mensaje
   const scrollToBottom = () => {
@@ -90,6 +91,7 @@ export default function ChatFlotante({
     if (abierto) {
       scrollToBottom();
       setNoLeidos(0);
+      setTimeout(() => inputRef.current?.focus(), 150);
     }
   }, [mensajes, abierto]);
 
@@ -193,22 +195,32 @@ export default function ChatFlotante({
   };
 
   const sugerenciasRapidas = [
-    "👋 Hola doctora, ¿cómo estás?",
+    "👋 Hola, ¿cómo estás?",
     "📅 Tengo una duda sobre mi próxima cita",
     "📝 Pregunta sobre mi tarea asignada",
   ];
 
   return (
-    <div className="fixed bottom-5 right-5 z-50 select-none">
-      {/* Ventana de Chat Expandida */}
+    <>
+      {/* 1. VENTANA DE CHAT: En móvil abre a pantalla completa fluida; en escritorio es ventana flotante */}
       {abierto && (
-        <div className="bg-white rounded-3xl shadow-2xl border border-[#9DBEBB]/50 w-[92vw] sm:w-[380px] h-[530px] max-h-[85vh] flex flex-col overflow-hidden mb-3 animate-in fade-in slide-in-from-bottom-5 duration-200">
+        <div className="fixed inset-0 sm:inset-auto sm:bottom-5 sm:right-5 z-50 flex flex-col bg-white sm:rounded-3xl sm:shadow-2xl sm:border sm:border-[#9DBEBB]/50 sm:w-[390px] sm:h-[540px] h-[100dvh] max-h-[100dvh] sm:max-h-[85vh] overflow-hidden animate-in fade-in slide-in-from-bottom-5 duration-200">
           {/* Cabecera del Chat */}
-          <div className="bg-[#031926] text-white p-4 border-b border-[#468189]/40 relative">
+          <div className="bg-[#031926] text-white p-3.5 sm:p-4 border-b border-[#468189]/40 relative shrink-0">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="relative">
-                  <div className="w-10 h-10 rounded-2xl bg-[#468189] text-white flex items-center justify-center font-bold text-sm shadow-xs overflow-hidden border border-[#77ACA2]/40">
+              <div className="flex items-center gap-2.5 sm:gap-3">
+                {/* Botón Volver en móvil */}
+                <button
+                  type="button"
+                  onClick={() => setAbierto(false)}
+                  className="sm:hidden p-1.5 -ml-1 text-white/90 hover:text-white rounded-xl hover:bg-white/10 transition"
+                  title="Volver"
+                >
+                  <ArrowLeft className="w-5 h-5" />
+                </button>
+
+                <div className="relative shrink-0">
+                  <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl bg-[#468189] text-white flex items-center justify-center font-bold text-xs sm:text-sm shadow-xs overflow-hidden border border-[#77ACA2]/40">
                     {especialistaActivo?.avatar ? (
                       <img
                         src={especialistaActivo.avatar}
@@ -220,15 +232,17 @@ export default function ChatFlotante({
                     )}
                   </div>
                   <span
-                    className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#031926] ${
+                    className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-[#031926] ${
                       enLinea ? "bg-emerald-500" : "bg-gray-400"
                     }`}
                   />
                 </div>
 
-                <div>
+                <div className="min-w-0">
                   <div className="flex items-center gap-1.5">
-                    <h4 className="text-sm font-bold leading-tight">{especialistaNombre}</h4>
+                    <h4 className="text-xs sm:text-sm font-bold leading-tight truncate">
+                      {especialistaNombre}
+                    </h4>
                     {listaEspecialistas.length > 1 && (
                       <button
                         type="button"
@@ -242,33 +256,35 @@ export default function ChatFlotante({
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span
-                      className={`w-2 h-2 rounded-full ${
+                      className={`w-1.5 h-1.5 rounded-full ${
                         enLinea ? "bg-emerald-400 animate-pulse" : "bg-gray-400"
                       }`}
                     />
-                    <span className="text-[11px] text-[#9DBEBB]">
+                    <span className="text-[10px] sm:text-[11px] text-[#9DBEBB] truncate">
                       {enLinea ? "En línea ahora" : "Fuera de consulta"}
                     </span>
                   </div>
                 </div>
               </div>
 
+              {/* Controles de minimizar en escritorio */}
               <div className="flex items-center gap-1">
                 <button
                   onClick={() => setAbierto(false)}
                   className="w-8 h-8 rounded-xl hover:bg-white/10 text-white/80 hover:text-white flex items-center justify-center transition cursor-pointer"
-                  title="Minimizar chat"
+                  title="Cerrar chat"
                 >
-                  <Minimize2 className="w-4 h-4" />
+                  <X className="w-4 h-4 hidden sm:block" />
+                  <span className="text-xs sm:hidden text-[#9DBEBB] font-semibold">Cerrar</span>
                 </button>
               </div>
             </div>
 
-            {/* Dropdown opcional para alternar entre especialistas disponibles */}
+            {/* Dropdown para alternar entre especialistas disponibles */}
             {mostrarSelector && listaEspecialistas.length > 1 && (
               <div className="absolute top-full left-0 right-0 bg-[#031926] border-b border-[#468189]/40 p-2 shadow-xl z-20 space-y-1 animate-in fade-in slide-in-from-top-2">
                 <span className="text-[10px] uppercase font-bold text-[#9DBEBB] px-2 block">
-                  Selecciona a quién escribir:
+                  Selecciona con quién chatear:
                 </span>
                 {listaEspecialistas.map((esp) => (
                   <button
@@ -277,7 +293,7 @@ export default function ChatFlotante({
                       setEspecialistaActivo(esp);
                       setMostrarSelector(false);
                     }}
-                    className={`w-full text-left p-2 rounded-xl text-xs flex items-center justify-between transition cursor-pointer ${
+                    className={`w-full text-left p-2.5 rounded-xl text-xs flex items-center justify-between transition cursor-pointer ${
                       especialistaActivo.id === esp.id
                         ? "bg-[#468189] text-white font-bold"
                         : "hover:bg-white/10 text-white/80"
@@ -294,17 +310,17 @@ export default function ChatFlotante({
           </div>
 
           {/* Banner de Estado / Disponibilidad */}
-          <div className="bg-[#FBF8F1] px-4 py-2 border-b border-[#9DBEBB]/30 text-[11px] text-[#031926]/70 flex items-center gap-2">
+          <div className="bg-[#FBF8F1] px-4 py-1.5 border-b border-[#9DBEBB]/30 text-[11px] text-[#031926]/75 flex items-center gap-2 shrink-0">
             <Clock className="w-3.5 h-3.5 text-[#468189] shrink-0" />
-            <span>
+            <span className="truncate">
               {enLinea
-                ? "Especialista activa en plataforma. Recibirás respuesta rápida."
-                : "Puedes dejar tu mensaje y recibirás respuesta en tu sesión o al conectarse."}
+                ? "Especialista en línea. Respuesta en breve."
+                : "Deja tu mensaje y te responderemos en tu sesión o al conectarse."}
             </span>
           </div>
 
           {/* Cuerpo de Mensajes */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-[#FBF8F1]/40">
+          <div className="flex-1 overflow-y-auto p-3.5 sm:p-4 space-y-3 bg-[#FBF8F1]/40">
             {mensajes.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-center p-6 text-[#031926]/60">
                 <div className="w-12 h-12 rounded-2xl bg-[#9DBEBB]/20 flex items-center justify-center mb-3 text-[#468189]">
@@ -314,7 +330,7 @@ export default function ChatFlotante({
                   Inicia una conversación
                 </h5>
                 <p className="text-xs text-[#031926]/70 mt-1 max-w-xs leading-relaxed">
-                  Envía un mensaje privado a tu psicóloga sobre tus dudas, tareas o seguimiento terapéutico.
+                  Envía un mensaje privado sobre tus dudas, tareas o seguimiento terapéutico.
                 </p>
 
                 <div className="mt-4 flex flex-col gap-1.5 w-full">
@@ -343,7 +359,7 @@ export default function ChatFlotante({
                     className={`flex flex-col ${esMio ? "items-end" : "items-start"}`}
                   >
                     <div
-                      className={`max-w-[80%] rounded-2xl px-3.5 py-2.5 text-xs sm:text-[13px] leading-relaxed shadow-xs ${
+                      className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-3.5 py-2.5 text-xs sm:text-[13px] leading-relaxed shadow-xs ${
                         esMio
                           ? "bg-[#468189] text-white rounded-br-xs"
                           : "bg-white text-[#031926] border border-[#9DBEBB]/40 rounded-bl-xs"
@@ -362,22 +378,23 @@ export default function ChatFlotante({
             <div ref={mensajesEndRef} />
           </div>
 
-          {/* Formulario de Envío */}
+          {/* Formulario de Envío optimizado para móvil (evita auto-zoom en iOS con text-base) */}
           <form
             onSubmit={handleEnviar}
-            className="p-3 bg-white border-t border-[#9DBEBB]/30 flex items-center gap-2"
+            className="p-2.5 sm:p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] bg-white border-t border-[#9DBEBB]/30 flex items-center gap-2 shrink-0"
           >
             <input
+              ref={inputRef}
               type="text"
               value={nuevoMensaje}
               onChange={(e) => setNuevoMensaje(e.target.value)}
               placeholder="Escribe tu mensaje..."
-              className="flex-1 bg-[#FBF8F1] border border-[#9DBEBB]/50 rounded-2xl px-4 py-2.5 text-xs sm:text-sm text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
+              className="flex-1 bg-[#FBF8F1] border border-[#9DBEBB]/50 rounded-2xl px-4 py-2.5 text-base sm:text-sm text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
             />
             <button
               type="submit"
               disabled={enviando || !nuevoMensaje.trim()}
-              className="w-10 h-10 rounded-2xl bg-[#031926] hover:bg-[#468189] text-white flex items-center justify-center shadow-md transition disabled:opacity-40 cursor-pointer shrink-0"
+              className="w-11 h-11 sm:w-10 sm:h-10 rounded-2xl bg-[#031926] hover:bg-[#468189] text-white flex items-center justify-center shadow-md transition disabled:opacity-40 cursor-pointer shrink-0"
             >
               <Send className="w-4 h-4" />
             </button>
@@ -385,52 +402,58 @@ export default function ChatFlotante({
         </div>
       )}
 
-      {/* Botón Flotante Tipo Messenger */}
+      {/* 2. BURBUJA FLOTANTE REDONDA REAL (TIPO MESSENGER) */}
       {!abierto && (
-        <button
-          onClick={() => setAbierto(true)}
-          className="group relative flex items-center gap-3 px-4 py-3 rounded-full bg-[#031926] text-white shadow-2xl border-2 border-[#77ACA2]/50 hover:bg-[#468189] transition cursor-pointer transform hover:scale-105 active:scale-95"
-        >
-          <div className="relative">
-            <div className="w-9 h-9 rounded-full bg-[#468189] flex items-center justify-center font-bold text-xs text-white overflow-hidden">
-              {especialistaActivo?.avatar ? (
-                <img
-                  src={especialistaActivo.avatar}
-                  alt={especialistaNombre}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <MessageSquare className="w-4 h-4" />
-              )}
+        <div className="fixed bottom-5 right-5 z-50">
+          <button
+            onClick={() => setAbierto(true)}
+            className="relative flex items-center justify-center w-14 h-14 sm:w-auto sm:h-auto sm:px-4 sm:py-3 rounded-full bg-[#031926] text-white shadow-2xl border-2 border-[#77ACA2]/60 hover:bg-[#468189] transition cursor-pointer transform hover:scale-105 active:scale-95"
+            title={`Chatear con ${especialistaNombre}`}
+          >
+            {/* Avatar / Ícono de la burbuja */}
+            <div className="relative shrink-0">
+              <div className="w-10 h-10 rounded-full bg-[#468189] flex items-center justify-center font-bold text-xs text-white overflow-hidden shadow-inner">
+                {especialistaActivo?.avatar ? (
+                  <img
+                    src={especialistaActivo.avatar}
+                    alt={especialistaNombre}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <MessageSquare className="w-5 h-5 text-white" />
+                )}
+              </div>
+              {/* Indicador en línea con pulso */}
+              <span
+                className={`absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#031926] ${
+                  enLinea ? "bg-emerald-500" : "bg-gray-400"
+                }`}
+              >
+                {enLinea && (
+                  <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
+                )}
+              </span>
             </div>
-            {/* Indicador en línea con animación de pulso */}
-            <span
-              className={`absolute -top-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#031926] ${
-                enLinea ? "bg-emerald-500" : "bg-gray-400"
-              }`}
-            >
-              {enLinea && (
-                <span className="absolute inset-0 rounded-full bg-emerald-400 animate-ping opacity-75" />
-              )}
-            </span>
-          </div>
 
-          <div className="text-left hidden sm:block pr-1">
-            <span className="text-xs font-bold block leading-tight">
-              Chat con {especialistaNombre.split(" ")[0]}
-            </span>
-            <span className="text-[10px] text-[#9DBEBB] block">
-              {enLinea ? "🟢 En línea ahora" : "⚪ Fuera de consulta"}
-            </span>
-          </div>
+            {/* Texto en pantallas medianas/grandes (en móvil es burbuja circular pura) */}
+            <div className="text-left hidden sm:block pr-1 ml-3">
+              <span className="text-xs font-bold block leading-tight">
+                Chat con {especialistaNombre.split(" ")[0]}
+              </span>
+              <span className="text-[10px] text-[#9DBEBB] block">
+                {enLinea ? "🟢 En línea ahora" : "⚪ Fuera de consulta"}
+              </span>
+            </div>
 
-          {noLeidos > 0 && (
-            <span className="absolute -top-1 -right-1 bg-rose-500 text-white font-extrabold text-[10px] w-5 h-5 rounded-full flex items-center justify-center shadow-md animate-bounce">
-              {noLeidos}
-            </span>
-          )}
-        </button>
+            {/* Contador de no leídos */}
+            {noLeidos > 0 && (
+              <span className="absolute -top-1 -right-1 bg-rose-500 text-white font-extrabold text-[10px] w-5 h-5 rounded-full flex items-center justify-center shadow-md animate-bounce border-2 border-white">
+                {noLeidos}
+              </span>
+            )}
+          </button>
+        </div>
       )}
-    </div>
+    </>
   );
 }
