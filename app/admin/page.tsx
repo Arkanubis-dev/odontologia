@@ -230,7 +230,14 @@ function AdminContent() {
         listaPacientes = dataPacientes || [];
       }
 
-      setPacientes(listaPacientes);
+      // Deduplicar estrictamente por id para garantizar que ningún usuario aparezca doble
+      const mapaUnicos = new Map<string, Perfil>();
+      listaPacientes.forEach((p) => {
+        if (p.id) mapaUnicos.set(p.id, p);
+      });
+      const pacientesUnicos = Array.from(mapaUnicos.values());
+
+      setPacientes(pacientesUnicos);
 
       // Mapa de pacientes para asociar nombres rápidamente
       const mapaPacientes: Record<string, Perfil> = {};
@@ -1076,166 +1083,6 @@ function AdminContent() {
                       </div>
                     );
                   })}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* 8. PESTAÑA: GESTIÓN DE ROLES (EXCLUSIVO SUPER ADMIN) */}
-        {tabActiva === "roles" && esSuperAdmin && (
-          <div className="space-y-4">
-            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#9DBEBB]/40 shadow-xs space-y-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-[#9DBEBB]/30">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <Crown className="w-5 h-5 text-amber-500" />
-                    <h3 className="text-base sm:text-lg font-bold text-[#031926]">
-                      Control Maestro de Roles y Accesos
-                    </h3>
-                  </div>
-                  <p className="text-xs text-[#031926]/70 mt-1">
-                    Como Super Administrador ({currentUser?.email}), puedes promover o degradar usuarios para que actúen como Consultante, Psicóloga o Administrador.
-                  </p>
-                </div>
-
-                <div className="w-full sm:w-64 relative">
-                  <Search className="w-4 h-4 text-[#77ACA2] absolute left-3 top-3" />
-                  <input
-                    type="text"
-                    placeholder="Buscar usuario o correo..."
-                    value={busquedaUsuarios}
-                    onChange={(e) => setBusquedaUsuarios(e.target.value)}
-                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-[#9DBEBB]/50 text-xs text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]"
-                  />
-                </div>
-              </div>
-
-              {/* Guía Rápida de Roles */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div className="p-3.5 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/30 text-xs">
-                  <span className="font-bold text-[#031926] flex items-center gap-1.5 mb-1">
-                    <span>👤 Consultante (Paciente)</span>
-                  </span>
-                  <p className="text-[11px] text-[#031926]/70">
-                    Solo accede a su portal privado: agenda citas, realiza tareas terapéuticas y califica cuando su sesión sea finalizada.
-                  </p>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-[#9DBEBB]/20 border border-[#77ACA2]/40 text-xs">
-                  <span className="font-bold text-[#031926] flex items-center gap-1.5 mb-1">
-                    <span>🩺 Psicóloga (Especialista)</span>
-                  </span>
-                  <p className="text-[11px] text-[#031926]/70">
-                    Accede al panel profesional: atiende sesiones, asigna tareas terapéuticas y marca citas como "Finalizadas".
-                  </p>
-                </div>
-
-                <div className="p-3.5 rounded-2xl bg-[#F4E9CD] border border-[#77ACA2]/30 text-xs">
-                  <span className="font-bold text-[#031926] flex items-center gap-1.5 mb-1">
-                    <span>👑 Administrador</span>
-                  </span>
-                  <p className="text-[11px] text-[#031926]/70">
-                    Control total del sistema: supervisa todas las citas y puede asignar roles a cualquier usuario registrado.
-                  </p>
-                </div>
-              </div>
-
-              {/* Lista de Usuarios */}
-              <div className="space-y-3 pt-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#468189]">
-                  Usuarios Registrados en el Sistema ({pacientes.length})
-                </h4>
-
-                <div className="grid grid-cols-1 gap-3">
-                  {pacientes
-                    .filter((p) => {
-                      if (!busquedaUsuarios) return true;
-                      const q = busquedaUsuarios.toLowerCase();
-                      return (
-                        p.email.toLowerCase().includes(q) ||
-                        p.nombre_completo?.toLowerCase().includes(q)
-                      );
-                    })
-                    .map((p) => {
-                      const esEsteSuperAdmin =
-                        p.email.toLowerCase() === "brayancamilo2407@gmail.com";
-
-                      return (
-                        <div
-                          key={p.id}
-                          className="p-4 sm:p-5 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:shadow-xs transition"
-                        >
-                          <div className="flex items-center gap-3.5">
-                            <div className="w-11 h-11 rounded-2xl bg-white text-[#031926] font-bold text-sm flex items-center justify-center border border-[#77ACA2]/40 shadow-xs shrink-0">
-                              {p.nombre_completo?.charAt(0).toUpperCase() || p.email.charAt(0).toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h5 className="text-xs sm:text-sm font-bold text-[#031926]">
-                                  {p.nombre_completo || "Usuario sin nombre"}
-                                </h5>
-                                {esEsteSuperAdmin && (
-                                  <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 text-[10px] font-extrabold border border-amber-300">
-                                    <Crown className="w-3 h-3 text-amber-600" />
-                                    SUPER ADMIN
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs text-[#031926]/70 flex items-center gap-1.5 mt-0.5">
-                                <Mail className="w-3 h-3 text-[#77ACA2]" />
-                                {p.email}
-                              </p>
-                              <p className="text-[10px] text-[#031926]/50 mt-0.5">
-                                Registrado el: {new Date(p.creado_en).toLocaleDateString("es-ES")}
-                              </p>
-                            </div>
-                          </div>
-
-                          {/* Selector de Rol */}
-                          <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-[#9DBEBB]/30">
-                            <div className="text-left sm:text-right">
-                              <span className="text-[10px] text-[#031926]/60 font-semibold block">
-                                Rol Asignado:
-                              </span>
-                              <span
-                                className={`inline-block px-2.5 py-0.5 rounded-full text-[11px] font-bold uppercase mt-0.5 ${
-                                  p.rol === "admin" || p.rol === "superadmin"
-                                    ? "bg-amber-100 text-amber-900 border border-amber-200"
-                                    : p.rol === "psicologo"
-                                    ? "bg-[#468189] text-white"
-                                    : "bg-white text-[#031926] border border-[#9DBEBB]/60"
-                                }`}
-                              >
-                                {p.rol === "psicologo"
-                                  ? "🩺 Psicóloga"
-                                  : p.rol === "admin" || p.rol === "superadmin"
-                                  ? "👑 Admin"
-                                  : "👤 Consultante"}
-                              </span>
-                            </div>
-
-                            <div className="shrink-0">
-                              <select
-                                value={p.rol || "paciente"}
-                                disabled={esEsteSuperAdmin}
-                                onChange={(e) =>
-                                  handleCambiarRol(
-                                    p.id,
-                                    e.target.value as "paciente" | "psicologo" | "admin"
-                                  )
-                                }
-                                className="p-2 sm:p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs font-semibold text-[#031926] bg-white hover:border-[#468189] focus:outline-none focus:ring-2 focus:ring-[#468189] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
-                              >
-                                <option value="paciente">👤 Consultante</option>
-                                <option value="psicologo">🩺 Psicóloga / Especialista</option>
-                                <option value="admin">👑 Administrador</option>
-                              </select>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                </div>
               </div>
             </div>
           </div>
