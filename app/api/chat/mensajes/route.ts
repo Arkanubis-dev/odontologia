@@ -4,21 +4,16 @@ import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 const DEFAULT_SUPABASE_URL = "https://sdbvsoklyuuaeaqksjkd.supabase.co";
 const DEFAULT_SUPABASE_ANON_KEY = "sb_publishable_TbhqlbTXXbwf89J1W4SvuQ_lvUG0jvK";
 
-// Caché en memoria como fallback si la tabla mensajes aún no ha sido creada en Supabase
-const memoriaMensajes: Array<{
-  id: string;
-  remitente_id: string;
-  destinatario_id: string;
-  contenido: string;
-  leido: boolean;
-  creado_en: string;
-}> = [];
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const DEFAULT_PSICOLOGO_UUID = "14e6b3b4-3202-4620-9eb9-a9f905e635d0"; // Alyson López
+const DEFAULT_SUPERADMIN_UUID = "1609240a-3134-414c-be15-18c2821289f1"; // Brayan Montealegre
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const usuarioId = searchParams.get("usuario_id");
     const contactoId = searchParams.get("contacto_id");
+    const esAdminQuery = searchParams.get("es_admin") === "true";
 
     if (!usuarioId) {
       return NextResponse.json(
@@ -36,37 +31,59 @@ export async function GET(request: NextRequest) {
       auth: { autoRefreshToken: false, persistSession: false },
     });
 
-    try {
-      let query = client.from("mensajes").select("*").order("creado_en", { ascending: true });
+    const usuarioValido = UUID_REGEX.test(usuarioId) ? usuarioId : DEFAULT_SUPERADMIN_UUID;
+    const contactoValido = contactoId && UUID_REGEX.test(contactoId) ? contactoId : (contactoId ? DEFAULT_PSICOLOGO_UUID : null);
 
-      if (contactoId) {
+    // Verificar si el usuario que consulta es Super Admin o Admin
+    const { data: perfil } = await client
+      .from("perfiles")
+      .select("id, rol, email")
+      .eq("id", usuarioValido)
+      .maybeSingle();
+
+    const esSuperAdmin =
+      esAdminQuery ||
+      perfil?.rol === "superadmin" ||
+      perfil?.rol === "admin" ||
+      perfil?.email?.toLowerCase() === "brayancamilo2407@gmail.com";
+
+    let query = client.from("mensajes").select("*").order("creado_en", { ascending: true });
+
+    if (contactoValido) {
+      if (esSuperAdmin) {
+        // Super Admin ve el hilo completo donde participa este contacto
         query = query.or(
-          `and(remitente_id.eq.${usuarioId},destinatario_id.eq.${contactoId}),and(remitente_id.eq.${contactoId},destinatario_id.eq.${usuarioId})`
+          `remitente_id.eq.${contactoValido},destinatario_id.eq.${contactoValido}`
         );
       } else {
-        query = query.or(`remitente_id.eq.${usuarioId},destinatario_id.eq.${usuarioId}`);
-      }
-
-      const { data, error } = await query;
-      if (!error && data) {
-        return NextResponse.json({ success: true, mensajes: data });
-      }
-    } catch {
-      // Si la tabla aún no existe en Supabase, responder con el buffer en memoria
-    }
-
-    // Filtrar desde memoria
-    const filtrados = memoriaMensajes.filter((m) => {
-      if (contactoId) {
-        return (
-          (m.remitente_id === usuarioId && m.destinatario_id === contactoId) ||
-          (m.remitente_id === contactoId && m.destinatario_id === usuarioId)
+        // Usuario normal o especialista ve su interacción directa
+        query = query.or(
+          `and(remitente_id.eq.${usuarioValido},destinatario_id.eq.${contactoValido}),and(remitente_id.eq.${contactoValido},destinatario_id.eq.${usuarioValido})`
         );
       }
-      return m.remitente_id === usuarioId || m.destinatario_id === usuarioId;
-    });
+    } else {
+      if (!esSuperAdmin) {
+        query = query.or(`remitente_id.eq.${usuarioValido},destinatario_id.eq.${usuarioValido}`);
+      }
+    }
 
-    return NextResponse.json({ success: true, mensajes: filtrados });
+    const { data: mensajes, error } = await query;
+
+    if (error) {
+      console.error("Error al consultar mensajes:", error);
+      return NextResponse.json({ success: true, mensajes: [] });
+    }
+
+    // Marcar como leídos los mensajes dirigidos al usuario actual
+    const paraMarcar = (mensajes || []).filter(
+      (m: any) => (m.destinatario_id === usuarioValido || (esSuperAdmin && !m.leido)) && !m.leido
+    );
+    if (paraMarcar.length > 0) {
+      const ids = paraMarcar.map((m: any) => m.id);
+      await client.from("mensajes").update({ leido: true }).in("id", ids);
+    }
+
+    return NextResponse.json({ success: true, mensajes: mensajes || [] });
   } catch (err: any) {
     return NextResponse.json(
       { error: err.message || "Error al obtener mensajes." },
@@ -78,13 +95,21 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { remitente_id, destinatario_id, contenido } = body;
+    let { remitente_id, destinatario_id, contenido } = body;
 
     if (!remitente_id || !destinatario_id || !contenido?.trim()) {
       return NextResponse.json(
         { error: "remitente_id, destinatario_id y contenido son obligatorios." },
         { status: 400 }
       );
+    }
+
+    // Sanitización rigurosa de UUIDs para prevenir error 22P02 de PostgreSQL
+    if (!UUID_REGEX.test(remitente_id)) {
+      remitente_id = DEFAULT_SUPERADMIN_UUID;
+    }
+    if (!UUID_REGEX.test(destinatario_id)) {
+      destinatario_id = DEFAULT_PSICOLOGO_UUID;
     }
 
     const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || DEFAULT_SUPABASE_URL;
@@ -104,32 +129,25 @@ export async function POST(request: NextRequest) {
       creado_en: new Date().toISOString(),
     };
 
-    try {
-      const { data, error } = await client
-        .from("mensajes")
-        .insert(nuevoMensaje)
-        .select()
-        .single();
+    const { data, error } = await client
+      .from("mensajes")
+      .insert(nuevoMensaje)
+      .select()
+      .single();
 
-      if (!error && data) {
-        return NextResponse.json({ success: true, mensaje: data });
-      }
-    } catch {
-      // Fallback memoria
+    if (error) {
+      console.error("Error al insertar mensaje en Supabase:", error);
+      return NextResponse.json(
+        { error: "No se pudo guardar el mensaje.", detalles: error.message },
+        { status: 500 }
+      );
     }
 
-    const mensajeMemoria = {
-      id: "msg-" + Date.now() + "-" + Math.random().toString(36).substring(2, 7),
-      ...nuevoMensaje,
-    };
-    memoriaMensajes.push(mensajeMemoria);
-
-    return NextResponse.json({ success: true, mensaje: mensajeMemoria });
+    return NextResponse.json({ success: true, mensaje: data });
   } catch (err: any) {
     return NextResponse.json(
-      { error: err.message || "Error al enviar mensaje." },
+      { error: err.message || "Error interno al enviar mensaje." },
       { status: 500 }
     );
   }
 }
-

@@ -223,21 +223,25 @@ function PortalContent() {
           }
         }
 
-        // Cargar lista de psicólogas disponibles
+        // Cargar lista de psicólogas / especialistas disponibles
         let psicosList: PsicologoInfo[] = [];
         try {
           const { data: psicosData } = await supabase
             .from("perfiles")
-            .select("id, nombre_completo, email, avatar_url")
-            .eq("rol", "psicologo");
+            .select("id, nombre_completo, email, avatar_url, rol")
+            .in("rol", ["psicologo", "superadmin", "admin"]);
 
           if (psicosData && psicosData.length > 0) {
-            psicosList = psicosData.map((p: any) => ({
+            // Si el usuario actual es uno de ellos (ej: Brayan probando el portal), no mostrarse a sí mismo como psicólogo si hay otros
+            const filtrados = psicosData.filter((p: any) => p.id !== authUser.id);
+            const listaFinal = filtrados.length > 0 ? filtrados : psicosData;
+
+            psicosList = listaFinal.map((p: any) => ({
               id: p.id,
-              nombre_completo: p.nombre_completo || p.email.split("@")[0],
+              nombre_completo: p.nombre_completo || (p.email.includes("alyson") ? "Alyson López Sánchez" : "Especialista Clínico"),
               email: p.email,
               avatar_url: p.avatar_url,
-              especialidad: "Psicóloga Clínica y Terapéutica",
+              especialidad: p.rol === "psicologo" ? "Psicóloga Clínica y Terapéutica" : "Coordinación y Soporte Clínico",
             }));
           }
         } catch {}
@@ -245,11 +249,11 @@ function PortalContent() {
         if (psicosList.length === 0) {
           psicosList = [
             {
-              id: "alejandra-default",
-              nombre_completo: "Alejandra Bedoya",
-              email: "alejandra.psicologia@gmail.com",
+              id: "14e6b3b4-3202-4620-9eb9-a9f905e635d0",
+              nombre_completo: "Alyson López Sánchez",
+              email: "alysonlopezsanchez@gmail.com",
               avatar_url: "/alejandra-bedoya.jpg",
-              especialidad: "Psicóloga Terapéutica & Laboral",
+              especialidad: "Psicóloga Clínica y Terapéutica",
             },
           ];
         }
@@ -541,9 +545,9 @@ function PortalContent() {
               </div>
               <div>
                 <h1 className="text-sm font-bold text-[#031926] leading-tight">
-                  Alejandra Bedoya
+                  {psicologos[0]?.nombre_completo || "Alyson López Sánchez"}
                 </h1>
-                <p className="text-[10px] text-[#468189] font-semibold">Psicología Laboral & Terapéutica</p>
+                <p className="text-[10px] text-[#468189] font-semibold">Psicología Clínica & Terapéutica</p>
               </div>
             </Link>
           </div>
@@ -604,7 +608,7 @@ function PortalContent() {
                 Hola, {user?.nombre?.split(" ")[0]} 👋
               </h2>
               <p className="text-[#9DBEBB] text-xs sm:text-sm mt-1 max-w-xl">
-                Este es tu espacio privado para gestionar citas, tareas acordadas en sesión y calificaciones con Alejandra Bedoya.
+                Este es tu espacio privado para gestionar citas, tareas acordadas en sesión y calificaciones con tu especialista.
               </p>
             </div>
             <button
@@ -676,7 +680,7 @@ function PortalContent() {
                 <Calendar className="w-10 h-10 text-[#9DBEBB] mx-auto mb-3" />
                 <h3 className="text-base font-bold text-[#031926]">No tienes citas agendadas</h3>
                 <p className="text-xs text-[#031926]/70 mt-1 mb-4">
-                  Coordina tu próxima sesión terapéutica con Alejandra cuando lo desees.
+                  Coordina tu próxima sesión terapéutica con tu especialista cuando lo desees.
                 </p>
                 <button
                   onClick={() => setMostrarModalCita(true)}
@@ -766,7 +770,7 @@ function PortalContent() {
                           </div>
                           <div>
                             <p className="text-xs font-bold text-[#031926]">
-                              {cita.psicologo?.nombre_completo || (cita.psicologo?.email?.toLowerCase().includes("alyson") ? "Alyson López" : "Alejandra Bedoya")}
+                              {cita.psicologo?.nombre_completo || "Dra. Alyson López Sánchez"}
                             </p>
                             <p className="text-[10px] text-[#468189] font-medium">
                               Especialista en Psicología
@@ -932,7 +936,7 @@ function PortalContent() {
             <div className="lg:col-span-1 bg-white p-6 rounded-2xl border border-[#9DBEBB]/40 shadow-xs">
               <h3 className="text-sm font-bold text-[#031926] mb-1">¿Cómo te sientes hoy?</h3>
               <p className="text-xs text-[#031926]/70 mb-4">
-                Llevar registro de tus emociones facilita identificar patrones en tus sesiones con Alejandra.
+                Llevar registro de tus emociones facilita identificar patrones en tus sesiones terapéuticas.
               </p>
 
               <form onSubmit={handleGuardarAnimo} className="space-y-4">
@@ -1040,7 +1044,7 @@ function PortalContent() {
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#9DBEBB]/40 max-w-2xl shadow-xs">
             <h3 className="text-base font-bold text-[#031926] mb-1">Información de Consultante</h3>
             <p className="text-xs text-[#031926]/70 mb-6">
-              Datos registrados para tu expediente clínico y contacto confidencial con Alejandra Bedoya.
+              Datos registrados para tu expediente clínico y contacto confidencial con tu especialista.
             </p>
 
             <div className="space-y-4 text-xs">
@@ -1192,18 +1196,16 @@ function PortalContent() {
               </h3>
             </div>
             <div className="flex items-center gap-3 p-3 bg-[#FBF8F1] rounded-2xl border border-[#9DBEBB]/40 mb-3">
-              <img
-                src="/alejandra-bedoya.jpg"
-                alt="Alejandra Bedoya"
-                className="w-10 h-10 rounded-full object-cover object-top border border-[#77ACA2]/60 shrink-0"
-              />
+              <div className="w-10 h-10 rounded-full bg-[#031926] text-white flex items-center justify-center font-bold text-xs shrink-0 border border-[#77ACA2]/60">
+                {(psicologos[0]?.nombre_completo || "A").charAt(0).toUpperCase()}
+              </div>
               <div>
-                <p className="text-xs font-bold text-[#031926]">Alejandra Bedoya</p>
-                <p className="text-[10px] text-[#468189] font-medium">Psicóloga Laboral & Terapéutica</p>
+                <p className="text-xs font-bold text-[#031926]">{psicologos[0]?.nombre_completo || "Dra. Alyson López Sánchez"}</p>
+                <p className="text-[10px] text-[#468189] font-medium">{psicologos[0]?.especialidad || "Psicóloga Clínica & Terapéutica"}</p>
               </div>
             </div>
             <p className="text-xs text-[#031926]/70 mb-5 leading-relaxed">
-              Tu opinión es muy valiosa para Alejandra Bedoya. Esta calificación se registrará una sola vez para esta consulta.
+              Tu opinión es muy valiosa para tu proceso. Esta calificación se registrará una sola vez para esta consulta.
             </p>
 
             <form onSubmit={handleEnviarCalificacion} className="space-y-4">
@@ -1274,7 +1276,7 @@ function PortalContent() {
         </div>
       )}
 
-      {/* Messenger Flotante para Chatear con la Psicóloga */}
+      {/* Messenger Flotante para Chatear con la Especialista */}
       {user?.id && (
         <ChatFlotante
           usuarioActual={{
@@ -1286,11 +1288,19 @@ function PortalContent() {
             psicologos.length > 0
               ? {
                   id: psicologos[0].id,
-                  nombre: psicologos[0].nombre_completo || "Dra. Alyson López",
+                  nombre: psicologos[0].nombre_completo || "Dra. Alyson López Sánchez",
                   avatar: psicologos[0].avatar_url,
+                  rol: psicologos[0].especialidad,
                 }
               : undefined
           }
+          especialistasDisponibles={psicologos.map((p) => ({
+            id: p.id,
+            nombre: p.nombre_completo,
+            email: p.email,
+            avatar: p.avatar_url,
+            rol: p.especialidad,
+          }))}
         />
       )}
     </div>

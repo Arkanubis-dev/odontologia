@@ -407,7 +407,8 @@ function AdminContent() {
 
     const cargarConversaciones = async () => {
       try {
-        const res = await fetch(`/api/chat/conversaciones?usuario_id=${currentUser.id}`);
+        const esAdminParam = esSuperAdmin ? "&es_admin=true" : "";
+        const res = await fetch(`/api/chat/conversaciones?usuario_id=${currentUser.id}${esAdminParam}`);
         if (res.ok) {
           const data = await res.json();
           if (Array.isArray(data.conversaciones)) {
@@ -427,7 +428,7 @@ function AdminContent() {
     cargarConversaciones();
     const interval = setInterval(cargarConversaciones, 2500);
     return () => clearInterval(interval);
-  }, [currentUser?.id]);
+  }, [currentUser?.id, esSuperAdmin]);
 
   // Cargar mensajes en tiempo real cuando se selecciona un paciente (polling rápido cada 2s)
   useEffect(() => {
@@ -435,8 +436,9 @@ function AdminContent() {
 
     const cargarMensajesAdmin = async () => {
       try {
+        const esAdminParam = esSuperAdmin ? "&es_admin=true" : "";
         const res = await fetch(
-          `/api/chat/mensajes?usuario_id=${currentUser.id}&contacto_id=${pacienteChatSeleccionado.id}`
+          `/api/chat/mensajes?usuario_id=${currentUser.id}&contacto_id=${pacienteChatSeleccionado.id}${esAdminParam}`
         );
         if (res.ok) {
           const data = await res.json();
@@ -450,7 +452,7 @@ function AdminContent() {
     cargarMensajesAdmin();
     const interval = setInterval(cargarMensajesAdmin, 2000);
     return () => clearInterval(interval);
-  }, [pacienteChatSeleccionado?.id, currentUser?.id]);
+  }, [pacienteChatSeleccionado?.id, currentUser?.id, esSuperAdmin]);
 
   // Enviar mensaje a paciente desde panel de especialista
   const handleEnviarMensajeAdmin = async (e: React.FormEvent) => {
@@ -2519,6 +2521,11 @@ function AdminContent() {
                           <p className="text-[11px] text-[#468189] font-medium truncate mt-0.5">
                             {conv.ultimo_mensaje?.contenido || c.email}
                           </p>
+                          {conv.especialista && conv.especialista.id !== c.id && (
+                            <span className="inline-block text-[9px] text-[#77ACA2] font-semibold mt-0.5">
+                              Con: {conv.especialista.nombre_completo || conv.especialista.email?.split("@")[0]}
+                            </span>
+                          )}
                         </div>
                       </button>
                     );
@@ -2611,7 +2618,17 @@ function AdminContent() {
                       </div>
                     ) : (
                       mensajesChat.map((msg) => {
-                        const esMio = msg.remitente_id === currentUser?.id;
+                        // Es saliente si lo envió el usuario actual o si fue dirigido al paciente consultado
+                        const esSaliente =
+                          msg.remitente_id === currentUser?.id ||
+                          msg.destinatario_id === pacienteChatSeleccionado?.id;
+
+                        const remitenteNombre =
+                          msg.remitente_id === currentUser?.id
+                            ? "Tú"
+                            : (pacientes.find((p) => p.id === msg.remitente_id)?.nombre_completo ||
+                               (msg.remitente_id.startsWith("14e6b") ? "Dra. Alyson López" : "Especialista"));
+
                         const hora = new Date(msg.creado_en).toLocaleTimeString([], {
                           hour: "2-digit",
                           minute: "2-digit",
@@ -2620,11 +2637,11 @@ function AdminContent() {
                         return (
                           <div
                             key={msg.id}
-                            className={`flex flex-col ${esMio ? "items-end" : "items-start"}`}
+                            className={`flex flex-col ${esSaliente ? "items-end" : "items-start"}`}
                           >
                             <div
                               className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-xs sm:text-sm leading-relaxed shadow-xs ${
-                                esMio
+                                esSaliente
                                   ? "bg-[#468189] text-white rounded-br-xs"
                                   : "bg-white text-[#031926] border border-[#9DBEBB]/40 rounded-bl-xs"
                               }`}
@@ -2632,8 +2649,8 @@ function AdminContent() {
                               {msg.contenido}
                             </div>
                             <span className="text-[10px] text-gray-400 mt-1 px-1 flex items-center gap-1">
-                              {hora}
-                              {esMio && <Check className="w-3 h-3 text-[#77ACA2]" />}
+                              <span>{remitenteNombre} · {hora}</span>
+                              {esSaliente && <Check className="w-3 h-3 text-[#77ACA2]" />}
                             </span>
                           </div>
                         );

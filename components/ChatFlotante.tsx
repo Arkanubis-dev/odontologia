@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { MessageSquare, X, Send, Sparkles, Circle, Minimize2, Check, Clock } from "lucide-react";
+import { MessageSquare, Send, Minimize2, Check, Clock, ChevronDown, User } from "lucide-react";
 
 interface Mensaje {
   id: string;
@@ -12,20 +12,32 @@ interface Mensaje {
   creado_en: string;
 }
 
+interface EspecialistaItem {
+  id: string;
+  nombre: string;
+  email?: string;
+  avatar?: string;
+  rol?: string;
+}
+
 interface ChatFlotanteProps {
   usuarioActual: {
     id: string;
     nombre: string;
     email?: string;
   };
-  especialista?: {
-    id: string;
-    nombre: string;
-    avatar?: string;
-  };
+  especialista?: EspecialistaItem;
+  especialistasDisponibles?: EspecialistaItem[];
 }
 
-export default function ChatFlotante({ usuarioActual, especialista }: ChatFlotanteProps) {
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const DEFAULT_ESPECIALISTA_UUID = "14e6b3b4-3202-4620-9eb9-a9f905e635d0"; // Alyson López
+
+export default function ChatFlotante({
+  usuarioActual,
+  especialista,
+  especialistasDisponibles = [],
+}: ChatFlotanteProps) {
   const [abierto, setAbierto] = useState(false);
   const [mensajes, setMensajes] = useState<Mensaje[]>([]);
   const [nuevoMensaje, setNuevoMensaje] = useState("");
@@ -33,8 +45,39 @@ export default function ChatFlotante({ usuarioActual, especialista }: ChatFlotan
   const [enLinea, setEnLinea] = useState<boolean>(false);
   const [noLeidos, setNoLeidos] = useState(0);
 
-  const especialistaId = especialista?.id || "14e6b3b4-3202-4620-9eb9-a9f905e635d0"; // Alyson por defecto
-  const especialistaNombre = especialista?.nombre || "Dra. Alyson López";
+  // Lista de especialistas sanitizada (solo UUIDs válidos y distintos al usuario actual si es posible)
+  const listaEspecialistas = (
+    especialistasDisponibles.length > 0
+      ? especialistasDisponibles
+      : especialista
+      ? [especialista]
+      : []
+  ).filter((e) => UUID_REGEX.test(e.id));
+
+  // Especialista activo
+  const defaultEspecialista =
+    listaEspecialistas.find((e) => e.id !== usuarioActual?.id) ||
+    listaEspecialistas[0] || {
+      id: DEFAULT_ESPECIALISTA_UUID,
+      nombre: "Dra. Alyson López Sánchez",
+      rol: "Psicóloga Clínica y Terapéutica",
+    };
+
+  const [especialistaActivo, setEspecialistaActivo] = useState<EspecialistaItem>(defaultEspecialista);
+  const [mostrarSelector, setMostrarSelector] = useState(false);
+
+  // Actualizar especialista activo si cambian las props
+  useEffect(() => {
+    if (listaEspecialistas.length > 0) {
+      const match = listaEspecialistas.find((e) => e.id !== usuarioActual?.id) || listaEspecialistas[0];
+      if (match) setEspecialistaActivo(match);
+    }
+  }, [especialistasDisponibles, especialista, usuarioActual?.id]);
+
+  const especialistaId = UUID_REGEX.test(especialistaActivo.id)
+    ? especialistaActivo.id
+    : DEFAULT_ESPECIALISTA_UUID;
+  const especialistaNombre = especialistaActivo.nombre || "Dra. Alyson López";
 
   const mensajesEndRef = useRef<HTMLDivElement>(null);
 
@@ -95,8 +138,8 @@ export default function ChatFlotante({ usuarioActual, especialista }: ChatFlotan
 
     cargarMensajes();
 
-    // Polling en tiempo real: 2 segundos cuando está abierto, 3.5 segundos cuando está cerrado
-    const intervalMs = abierto ? 2000 : 3500;
+    // Polling en tiempo real: 2 segundos cuando está abierto, 4 segundos cuando está cerrado
+    const intervalMs = abierto ? 2000 : 4000;
     const interval = setInterval(cargarMensajes, intervalMs);
 
     return () => clearInterval(interval);
@@ -150,61 +193,103 @@ export default function ChatFlotante({ usuarioActual, especialista }: ChatFlotan
 
   const sugerenciasRapidas = [
     "👋 Hola doctora, ¿cómo estás?",
-    "📅 Tengo una duda de mi cita",
-    "📝 Pregunta sobre mi tarea",
+    "📅 Tengo una duda sobre mi próxima cita",
+    "📝 Pregunta sobre mi tarea asignada",
   ];
 
   return (
     <div className="fixed bottom-5 right-5 z-50 select-none">
       {/* Ventana de Chat Expandida */}
       {abierto && (
-        <div className="bg-white rounded-3xl shadow-2xl border border-[#9DBEBB]/50 w-[92vw] sm:w-[380px] h-[520px] max-h-[85vh] flex flex-col overflow-hidden mb-3 animate-in fade-in slide-in-from-bottom-5 duration-200">
+        <div className="bg-white rounded-3xl shadow-2xl border border-[#9DBEBB]/50 w-[92vw] sm:w-[380px] h-[530px] max-h-[85vh] flex flex-col overflow-hidden mb-3 animate-in fade-in slide-in-from-bottom-5 duration-200">
           {/* Cabecera del Chat */}
-          <div className="bg-[#031926] text-white p-4 flex items-center justify-between border-b border-[#468189]/40">
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <div className="w-10 h-10 rounded-2xl bg-[#468189] text-white flex items-center justify-center font-bold text-sm shadow-xs overflow-hidden border border-[#77ACA2]/40">
-                  {especialista?.avatar ? (
-                    <img
-                      src={especialista.avatar}
-                      alt={especialistaNombre}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <span>{especialistaNombre.charAt(0)}</span>
-                  )}
-                </div>
-                <span
-                  className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#031926] ${
-                    enLinea ? "bg-emerald-500" : "bg-gray-400"
-                  }`}
-                />
-              </div>
-
-              <div>
-                <h4 className="text-sm font-bold leading-tight">{especialistaNombre}</h4>
-                <div className="flex items-center gap-1.5 mt-0.5">
+          <div className="bg-[#031926] text-white p-4 border-b border-[#468189]/40 relative">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <div className="w-10 h-10 rounded-2xl bg-[#468189] text-white flex items-center justify-center font-bold text-sm shadow-xs overflow-hidden border border-[#77ACA2]/40">
+                    {especialistaActivo?.avatar ? (
+                      <img
+                        src={especialistaActivo.avatar}
+                        alt={especialistaNombre}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span>{especialistaNombre.charAt(0)}</span>
+                    )}
+                  </div>
                   <span
-                    className={`w-2 h-2 rounded-full ${
-                      enLinea ? "bg-emerald-400 animate-pulse" : "bg-gray-400"
+                    className={`absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full border-2 border-[#031926] ${
+                      enLinea ? "bg-emerald-500" : "bg-gray-400"
                     }`}
                   />
-                  <span className="text-[11px] text-[#9DBEBB]">
-                    {enLinea ? "En línea ahora" : "Fuera de consulta"}
-                  </span>
                 </div>
+
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <h4 className="text-sm font-bold leading-tight">{especialistaNombre}</h4>
+                    {listaEspecialistas.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => setMostrarSelector(!mostrarSelector)}
+                        className="text-[#9DBEBB] hover:text-white transition p-0.5"
+                        title="Cambiar especialista"
+                      >
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1.5 mt-0.5">
+                    <span
+                      className={`w-2 h-2 rounded-full ${
+                        enLinea ? "bg-emerald-400 animate-pulse" : "bg-gray-400"
+                      }`}
+                    />
+                    <span className="text-[11px] text-[#9DBEBB]">
+                      {enLinea ? "En línea ahora" : "Fuera de consulta"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setAbierto(false)}
+                  className="w-8 h-8 rounded-xl hover:bg-white/10 text-white/80 hover:text-white flex items-center justify-center transition cursor-pointer"
+                  title="Minimizar chat"
+                >
+                  <Minimize2 className="w-4 h-4" />
+                </button>
               </div>
             </div>
 
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setAbierto(false)}
-                className="w-8 h-8 rounded-xl hover:bg-white/10 text-white/80 hover:text-white flex items-center justify-center transition cursor-pointer"
-                title="Minimizar chat"
-              >
-                <Minimize2 className="w-4 h-4" />
-              </button>
-            </div>
+            {/* Dropdown opcional para alternar entre especialistas disponibles */}
+            {mostrarSelector && listaEspecialistas.length > 1 && (
+              <div className="absolute top-full left-0 right-0 bg-[#031926] border-b border-[#468189]/40 p-2 shadow-xl z-20 space-y-1 animate-in fade-in slide-in-from-top-2">
+                <span className="text-[10px] uppercase font-bold text-[#9DBEBB] px-2 block">
+                  Selecciona a quién escribir:
+                </span>
+                {listaEspecialistas.map((esp) => (
+                  <button
+                    key={esp.id}
+                    onClick={() => {
+                      setEspecialistaActivo(esp);
+                      setMostrarSelector(false);
+                    }}
+                    className={`w-full text-left p-2 rounded-xl text-xs flex items-center justify-between transition cursor-pointer ${
+                      especialistaActivo.id === esp.id
+                        ? "bg-[#468189] text-white font-bold"
+                        : "hover:bg-white/10 text-white/80"
+                    }`}
+                  >
+                    <span>{esp.nombre}</span>
+                    <span className="text-[10px] text-[#9DBEBB]">
+                      {esp.rol || (esp.id === DEFAULT_ESPECIALISTA_UUID ? "Psicóloga" : "Especialista")}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Banner de Estado / Disponibilidad */}
@@ -212,8 +297,8 @@ export default function ChatFlotante({ usuarioActual, especialista }: ChatFlotan
             <Clock className="w-3.5 h-3.5 text-[#468189] shrink-0" />
             <span>
               {enLinea
-                ? "La psicóloga está activa en la plataforma."
-                : "Puedes dejar tu mensaje y recibirás respuesta en tu sesión o cuando se conecte."}
+                ? "Especialista activa en plataforma. Recibirás respuesta rápida."
+                : "Puedes dejar tu mensaje y recibirás respuesta en tu sesión o al conectarse."}
             </span>
           </div>
 
@@ -228,7 +313,7 @@ export default function ChatFlotante({ usuarioActual, especialista }: ChatFlotan
                   Inicia una conversación
                 </h5>
                 <p className="text-xs text-[#031926]/70 mt-1 max-w-xs leading-relaxed">
-                  Envía un mensaje privado a tu psicóloga sobre tus dudas, tareas o seguimiento.
+                  Envía un mensaje privado a tu psicóloga sobre tus dudas, tareas o seguimiento terapéutico.
                 </p>
 
                 <div className="mt-4 flex flex-col gap-1.5 w-full">
@@ -307,9 +392,9 @@ export default function ChatFlotante({ usuarioActual, especialista }: ChatFlotan
         >
           <div className="relative">
             <div className="w-9 h-9 rounded-full bg-[#468189] flex items-center justify-center font-bold text-xs text-white overflow-hidden">
-              {especialista?.avatar ? (
+              {especialistaActivo?.avatar ? (
                 <img
-                  src={especialista.avatar}
+                  src={especialistaActivo.avatar}
                   alt={especialistaNombre}
                   className="w-full h-full object-cover"
                 />
@@ -331,7 +416,7 @@ export default function ChatFlotante({ usuarioActual, especialista }: ChatFlotan
 
           <div className="text-left hidden sm:block pr-1">
             <span className="text-xs font-bold block leading-tight">
-              Chat con Psicóloga
+              Chat con {especialistaNombre.split(" ")[0]}
             </span>
             <span className="text-[10px] text-[#9DBEBB] block">
               {enLinea ? "🟢 En línea ahora" : "⚪ Fuera de consulta"}
@@ -348,4 +433,3 @@ export default function ChatFlotante({ usuarioActual, especialista }: ChatFlotan
     </div>
   );
 }
-
