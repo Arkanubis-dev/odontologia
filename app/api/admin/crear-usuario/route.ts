@@ -113,6 +113,14 @@ export async function POST(request: NextRequest) {
       });
 
       if (adminErr) {
+        if (adminErr.message.toLowerCase().includes("already")) {
+          return NextResponse.json(
+            {
+              error: `El usuario ${email} ya existe en el sistema. Si deseas cambiar sus permisos, ve a la pestaña 'Gestión de Roles'.`,
+            },
+            { status: 400 }
+          );
+        }
         return NextResponse.json({ error: adminErr.message }, { status: 400 });
       }
 
