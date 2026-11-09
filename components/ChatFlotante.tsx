@@ -195,9 +195,9 @@ export default function ChatFlotante({
   };
 
   const sugerenciasRapidas = [
-    "👋 Hola, ¿cómo estás?",
-    "📅 Tengo una duda sobre mi próxima cita",
-    "📝 Pregunta sobre mi tarea asignada",
+    "Hola, ¿cómo estás?",
+    "Tengo una duda sobre mi próxima cita",
+    "Pregunta sobre mi tarea asignada",
   ];
 
   return (
@@ -440,8 +440,9 @@ export default function ChatFlotante({
               <span className="text-xs font-bold block leading-tight">
                 Chat con {especialistaNombre.split(" ")[0]}
               </span>
-              <span className="text-[10px] text-[#9DBEBB] block">
-                {enLinea ? "🟢 En línea ahora" : "⚪ Fuera de consulta"}
+              <span className="text-[10px] text-[#9DBEBB] flex items-center gap-1.5 mt-0.5">
+                <span className={`w-1.5 h-1.5 rounded-full ${enLinea ? "bg-emerald-400" : "bg-slate-400"}`} />
+                <span>{enLinea ? "En consulta / En línea" : "Buzón privado"}</span>
               </span>
             </div>
 

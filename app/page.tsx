@@ -289,7 +289,7 @@ export default function Home() {
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#031926]/85 via-transparent to-transparent" />
                   <div className="absolute bottom-6 left-6 right-6 text-white">
-                    <span className="inline-block px-3 py-1 rounded-full bg-[#77ACA2]/30 backdrop-blur-md text-white text-[10px] font-bold uppercase tracking-wider mb-2 border border-[#77ACA2]/40">
+                    <span className="inline-block px-3 py-1 rounded-full bg-[#031926]/75 text-[#F4E9CD] text-[10px] font-medium tracking-wide mb-2 border border-[#77ACA2]/30">
                       Consulta Virtual & Presencial
                     </span>
                     <h3 className="text-xl font-bold tracking-tight">Alejandra Bedoya</h3>

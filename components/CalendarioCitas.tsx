@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
-import { ChevronLeft, ChevronRight, Clock, Video, MapPin, CheckCircle2 } from "lucide-react";
+import { ChevronLeft, ChevronRight, Clock, Video, MapPin, CheckCircle2, Calendar } from "lucide-react";
 
 export interface PsicologoInfo {
   id: string;
@@ -298,12 +298,15 @@ export default function CalendarioCitas({
 
             {diaSeleccionado ? (
               <div className="pt-2">
-                <p className="text-[11px] text-[#031926]/70 mb-3 capitalize">
-                  📅 {diaSeleccionado.toLocaleDateString("es-ES", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                  })}
+                <p className="text-[11px] text-[#031926]/80 mb-3 capitalize flex items-center gap-1.5 font-medium">
+                  <Calendar className="w-3.5 h-3.5 text-[#468189]" />
+                  <span>
+                    {diaSeleccionado.toLocaleDateString("es-ES", {
+                      weekday: "long",
+                      day: "numeric",
+                      month: "long",
+                    })}
+                  </span>
                 </p>
 
                 <div className="grid grid-cols-2 gap-2 max-h-56 overflow-y-auto pr-1">

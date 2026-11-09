@@ -8,6 +8,11 @@ import {
   Calendar,
   ClipboardList,
   Smile,
+  Frown,
+  Meh,
+  Sun,
+  Stethoscope,
+  Lightbulb,
   Users,
   LogOut,
   Video,
@@ -728,7 +733,7 @@ function AdminContent() {
 
   const handleCopiarCredenciales = () => {
     if (!usuarioCreadoResultado) return;
-    const texto = `📋 Credenciales de Acceso - Dra. Alejandra Bedoya Psicología\n👤 Nombre: ${usuarioCreadoResultado.nombre}\n📧 Correo: ${usuarioCreadoResultado.email}\n🔑 Contraseña: ${usuarioCreadoResultado.password}\n🏷️ Rol: ${usuarioCreadoResultado.rol.toUpperCase()}\n🌐 Iniciar Sesión: https://psicologia-aleja.vercel.app/login`;
+    const texto = `Credenciales de Acceso - Dra. Alejandra Bedoya Psicología\nNombre: ${usuarioCreadoResultado.nombre}\nCorreo: ${usuarioCreadoResultado.email}\nContraseña: ${usuarioCreadoResultado.password}\nRol: ${usuarioCreadoResultado.rol.toUpperCase()}\nIniciar Sesión: https://psicologia-aleja.vercel.app/login`;
     navigator.clipboard.writeText(texto);
     setCredencialesCopiadas(true);
     setTimeout(() => setCredencialesCopiadas(false), 3000);
@@ -990,11 +995,11 @@ function AdminContent() {
   });
 
   const caritasInfo = [
-    { nivel: 1, emoji: "😔", etiqueta: "Muy bajo" },
-    { nivel: 2, emoji: "😐", etiqueta: "Bajo / Cansado" },
-    { nivel: 3, emoji: "🙂", etiqueta: "Tranquilo" },
-    { nivel: 4, emoji: "😊", etiqueta: "Bien" },
-    { nivel: 5, emoji: "🌟", etiqueta: "Excelente" },
+    { nivel: 1, icono: Frown, etiqueta: "Sobrecarga", tono: "text-rose-600 bg-rose-50 border-rose-200" },
+    { nivel: 2, icono: Meh, etiqueta: "Cansancio", tono: "text-amber-600 bg-amber-50 border-amber-200" },
+    { nivel: 3, icono: Smile, etiqueta: "Serenidad", tono: "text-[#468189] bg-[#468189]/10 border-[#468189]/30" },
+    { nivel: 4, icono: Sparkles, etiqueta: "Claridad", tono: "text-[#77ACA2] bg-[#77ACA2]/15 border-[#77ACA2]/40" },
+    { nivel: 5, icono: Sun, etiqueta: "Plenitud", tono: "text-emerald-700 bg-emerald-50 border-emerald-200" },
   ];
 
   const emocionalesFiltrados = emocionales.filter((e) => {
@@ -1071,12 +1076,15 @@ function AdminContent() {
         {/* Banner de Bienvenida con Estadísticas en Rich Black (#031926) */}
         <div className="bg-[#031926] rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-[#031926]/10 border border-[#468189]/30">
           <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-            <div className="space-y-1.5 max-w-xl">
-              <span className="inline-block px-3 py-1 bg-[#468189]/40 backdrop-blur-md rounded-full text-xs font-semibold uppercase tracking-wider text-[#9DBEBB] border border-[#77ACA2]/30">
-                {esSuperAdmin ? "👑 Modo Super Administrador" : "Panel Clínico • Especialista"}
-              </span>
+            <div className="space-y-2 max-w-xl">
+              <div className="flex items-center gap-2">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-[#468189]/30 rounded-xl text-xs font-semibold text-[#9DBEBB] border border-[#77ACA2]/30">
+                  {esSuperAdmin ? <Crown className="w-3.5 h-3.5 text-amber-400" /> : <ShieldCheck className="w-3.5 h-3.5 text-[#77ACA2]" />}
+                  <span>{esSuperAdmin ? "Super Administrador" : "Panel Clínico Especialista"}</span>
+                </span>
+              </div>
               <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                Bienvenid@, {nombreActivo.split(" ")[0]} 👋
+                Bienvenido, {nombreActivo.split(" ")[0]}
               </h2>
               <p className="text-[#9DBEBB] text-xs sm:text-sm leading-relaxed">
                 {esSuperAdmin
@@ -1379,7 +1387,8 @@ function AdminContent() {
                           <p className="text-xs font-semibold text-[#468189]">Consultante:</p>
                           {cita.psicologo ? (
                             <span className="text-[10px] font-bold text-[#468189] bg-[#9DBEBB]/20 px-2 py-0.5 rounded-md border border-[#77ACA2]/30 flex items-center gap-1">
-                              <span>🩺</span> {cita.psicologo.nombre_completo || cita.psicologo.email}
+                              <Stethoscope className="w-3 h-3 text-[#468189]" />
+                              <span>{cita.psicologo.nombre_completo || cita.psicologo.email}</span>
                             </span>
                           ) : (
                             <span className="text-[10px] font-semibold text-gray-500 bg-gray-100 px-2 py-0.5 rounded-md">
@@ -1877,9 +1886,12 @@ function AdminContent() {
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-white border border-[#9DBEBB]/40 shadow-xs shrink-0">
-                            <span className="text-lg">{carita.emoji}</span>
-                            <span className="text-xs font-bold text-[#031926]">{reg.nivel_animo}.0</span>
+                          <div className={`flex items-center gap-1.5 px-3 py-1 rounded-xl border shadow-xs shrink-0 ${carita.tono}`}>
+                            {(() => {
+                              const Icon = carita.icono;
+                              return <Icon className="w-4 h-4" />;
+                            })()}
+                            <span className="text-xs font-bold">{reg.nivel_animo}.0</span>
                           </div>
                         </div>
 
@@ -1963,37 +1975,40 @@ function AdminContent() {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="p-3.5 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/30 text-xs">
                   <span className="font-bold text-[#031926] flex items-center gap-1.5 mb-1">
-                    <span>👤 Consultante (Paciente)</span>
+                    <User className="w-3.5 h-3.5 text-[#468189]" />
+                    <span>Consultante (Paciente)</span>
                   </span>
                   <p className="text-[11px] text-[#031926]/70">
-                    Solo accede a su portal privado: agenda citas, realiza tareas terapéuticas y califica cuando su sesión sea finalizada.
+                    Acceso básico al portal: agenda citas, realiza tareas terapéuticas y califica sesiones finalizadas.
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-[#9DBEBB]/20 border border-[#77ACA2]/40 text-xs">
                   <span className="font-bold text-[#031926] flex items-center gap-1.5 mb-1">
-                    <span>🩺 Psicóloga (Especialista)</span>
+                    <Stethoscope className="w-3.5 h-3.5 text-[#468189]" />
+                    <span>Psicóloga (Especialista)</span>
                   </span>
                   <p className="text-[11px] text-[#031926]/70">
-                    Accede al panel profesional: atiende sesiones, asigna tareas terapéuticas y marca citas como "Finalizadas".
+                    Acceso al panel clínico: atiende sesiones, asigna tareas y gestiona estados de citas.
                   </p>
                 </div>
 
                 <div className="p-3.5 rounded-2xl bg-[#F4E9CD] border border-[#77ACA2]/30 text-xs">
                   <span className="font-bold text-[#031926] flex items-center gap-1.5 mb-1">
-                    <span>👑 Administrador</span>
+                    <Crown className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Administrador</span>
                   </span>
                   <p className="text-[11px] text-[#031926]/70">
-                    Control total del sistema: supervisa todas las citas y puede asignar roles a cualquier usuario registrado.
+                    Control maestro del sistema: supervisa todas las citas y administra roles y accesos.
                   </p>
                 </div>
               </div>
 
               {/* Lista de Usuarios */}
               <div className="space-y-3 pt-2">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-[#468189]">
+                <h3 className="text-sm font-bold text-[#031926]">
                   Usuarios Registrados en el Sistema ({pacientes.length})
-                </h4>
+                </h3>
 
                 <div className="grid grid-cols-1 gap-3">
                   {pacientes
@@ -2056,10 +2071,10 @@ function AdminContent() {
                                 }`}
                               >
                                 {p.rol === "psicologo"
-                                  ? "🩺 Psicóloga"
+                                  ? "Psicóloga Especialista"
                                   : p.rol === "admin" || p.rol === "superadmin"
-                                  ? "👑 Admin"
-                                  : "👤 Consultante"}
+                                  ? "Administrador"
+                                  : "Consultante"}
                               </span>
                             </div>
 
@@ -2075,9 +2090,9 @@ function AdminContent() {
                                 }
                                 className="p-2 sm:p-2.5 rounded-xl border border-[#9DBEBB]/60 text-xs font-semibold text-[#031926] bg-white hover:border-[#468189] focus:outline-none focus:ring-2 focus:ring-[#468189] cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shadow-xs"
                               >
-                                <option value="paciente">👤 Consultante</option>
-                                <option value="psicologo">🩺 Psicóloga / Especialista</option>
-                                <option value="admin">👑 Administrador</option>
+                                <option value="paciente">Consultante</option>
+                                <option value="psicologo">Psicóloga / Especialista</option>
+                                <option value="admin">Administrador</option>
                               </select>
 
                               {!esEsteSuperAdmin && (
@@ -2177,10 +2192,10 @@ function AdminContent() {
                       <span className="text-[10px] font-bold text-gray-500 uppercase block">Rol Asignado:</span>
                       <span className="inline-block px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-emerald-100 text-emerald-900 border border-emerald-300">
                         {usuarioCreadoResultado.rol === "psicologo"
-                          ? "🩺 Psicóloga"
+                          ? "Psicóloga Especialista"
                           : usuarioCreadoResultado.rol === "admin"
-                          ? "👑 Admin"
-                          : "👤 Consultante"}
+                          ? "Administrador"
+                          : "Consultante"}
                       </span>
                     </div>
                   </div>
@@ -2218,9 +2233,9 @@ function AdminContent() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   {/* Columna 1: Información de Contacto */}
                   <div className="space-y-4">
-                    <h4 className="text-xs font-extrabold text-[#468189] uppercase tracking-wider">
-                      1. Información del Usuario
-                    </h4>
+                    <h3 className="text-xs font-bold text-[#031926]">
+                      Información del Usuario
+                    </h3>
 
                     <div>
                       <label className="block text-xs font-bold text-[#031926] mb-1.5">
@@ -2281,9 +2296,9 @@ function AdminContent() {
 
                   {/* Columna 2: Seguridad y Rol */}
                   <div className="space-y-4">
-                    <h4 className="text-xs font-extrabold text-[#468189] uppercase tracking-wider">
-                      2. Seguridad y Permisos
-                    </h4>
+                    <h3 className="text-xs font-bold text-[#031926]">
+                      Seguridad y Permisos
+                    </h3>
 
                     <div>
                       <div className="flex items-center justify-between mb-1.5">
@@ -2378,7 +2393,7 @@ function AdminContent() {
                               }
                               className="accent-[#468189]"
                             />
-                            <span className="text-xs font-bold text-[#031926]">🩺 Psicóloga</span>
+                            <span className="text-xs font-bold text-[#031926]">Psicóloga Especialista</span>
                           </div>
                           <span className="text-[10px] text-gray-500 mt-1.5">
                             Panel clínico: gestión de citas, consultantes y tareas.
@@ -2403,7 +2418,7 @@ function AdminContent() {
                               }
                               className="accent-amber-600"
                             />
-                            <span className="text-xs font-bold text-amber-900">👑 Admin</span>
+                            <span className="text-xs font-bold text-amber-900">Administrador</span>
                           </div>
                           <span className="text-[10px] text-amber-800/80 mt-1.5">
                             Permisos completos de administración y control de roles.
@@ -2454,8 +2469,9 @@ function AdminContent() {
                     <MessageSquare className="w-5 h-5 text-[#468189]" />
                     Conversaciones
                   </h3>
-                  <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded-full border border-emerald-300">
-                    🟢 En línea
+                  <span className="text-[10px] bg-emerald-50 text-emerald-800 font-bold px-2.5 py-0.5 rounded-full border border-emerald-200 flex items-center gap-1.5">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                    <span>En línea</span>
                   </span>
                 </div>
 
@@ -2605,10 +2621,10 @@ function AdminContent() {
                         </h4>
                         <p className="text-[10px] sm:text-[11px] text-[#031926]/60 truncate">
                           {pacienteChatSeleccionado.rol === "psicologo"
-                            ? "🩺 Psicóloga Especialista"
+                            ? "Psicóloga Especialista"
                             : pacienteChatSeleccionado.rol === "superadmin"
-                            ? "👑 Super Admin"
-                            : "👤 Consultante"} · {pacienteChatSeleccionado.email}
+                            ? "Super Admin"
+                            : "Consultante"} · {pacienteChatSeleccionado.email}
                         </p>
                       </div>
                     </div>
@@ -2838,7 +2854,7 @@ function AdminContent() {
 
             {/* Opciones rápidas para enlaces 100% reales de Google Meet */}
             <div className="p-3.5 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/40 space-y-2.5">
-              <span className="text-[11px] font-bold text-[#468189] uppercase tracking-wider block">
+              <span className="text-[11px] font-semibold text-[#031926] block">
                 Generar o asignar reunión auténtica:
               </span>
               <div className="flex flex-wrap gap-2">
@@ -2863,8 +2879,8 @@ function AdminContent() {
                   <span>Crear nueva sala en Google Meet ↗</span>
                 </a>
               </div>
-              <p className="text-[10px] text-gray-500 leading-relaxed">
-                💡 Haz clic en <strong>"Crear nueva sala"</strong> para abrir Google Meet en tu cuenta de Google. Google generará una reunión real; copia el enlace de la barra del navegador y pégalo abajo.
+              <p className="text-[10px] text-[#031926]/70 leading-relaxed">
+                Haz clic en <strong>"Crear nueva sala"</strong> para abrir Google Meet en tu cuenta de Google. Google generará una reunión real; copia el enlace de la barra del navegador y pégalo abajo.
               </p>
             </div>
 
@@ -3210,7 +3226,10 @@ function AdminContent() {
                   />
                 </div>
                 <div className="flex items-center justify-between text-[10px] text-emerald-800/90 pt-1">
-                  <span>💡 Tip: Puedes crear una reunión en <a href="https://meet.google.com" target="_blank" rel="noopener noreferrer" className="underline font-bold">meet.google.com</a>, copiar el enlace y pegarlo aquí.</span>
+                  <span className="flex items-center gap-1.5">
+                    <Lightbulb className="w-3 h-3 text-emerald-700" />
+                    <span>Puedes crear una reunión en <a href="https://meet.google.com" target="_blank" rel="noopener noreferrer" className="underline font-bold">meet.google.com</a>, copiar el enlace y pegarlo aquí.</span>
+                  </span>
                 </div>
               </div>
 

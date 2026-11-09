@@ -153,28 +153,21 @@ export default function LoginPage() {
       </div>
 
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="flex justify-center">
-          <div className="w-16 h-16 rounded-2xl overflow-hidden border-2 border-[#77ACA2]/50 shadow-lg shadow-[#468189]/25">
-            <img
-              src="/alejandra-bedoya.jpg"
-              alt="Alejandra Bedoya - Psicóloga Laboral & Terapéutica"
-              className="w-full h-full object-cover object-top"
-            />
+        <div className="flex justify-center mb-4">
+          <div className="w-12 h-12 rounded-2xl bg-[#031926] text-[#77ACA2] flex items-center justify-center shadow-xs">
+            <Brain className="w-6 h-6" />
           </div>
         </div>
-        <div className="mt-3 inline-block px-3 py-1 rounded-full bg-[#F4E9CD] text-[#031926] text-[11px] font-bold tracking-wide">
-          Alejandra Bedoya · Psicología Laboral & Terapéutica
-        </div>
-        <h2 className="mt-3 text-2xl sm:text-3xl font-extrabold text-[#031926] tracking-tight">
-          Portal del Consultante
-        </h2>
+        <h1 className="text-2xl sm:text-3xl font-extrabold text-[#031926] tracking-tight">
+          Portal Clínico
+        </h1>
         <p className="mt-2 text-xs sm:text-sm text-[#031926]/70 max-w-sm mx-auto leading-relaxed">
-          Accede a tus citas, seguimiento de tareas terapéuticas y calificaciones de tus sesiones finalizadas
+          Acceso privado para consultantes y especialistas a sus sesiones, seguimiento de objetivos y registro terapéutico.
         </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-6 shadow-xl shadow-[#031926]/5 rounded-3xl border border-[#9DBEBB]/40 sm:px-10">
+        <div className="bg-white py-8 px-6 shadow-sm rounded-3xl border border-[#9DBEBB]/40 sm:px-10">
           {errorMsg && (
             <div className="mb-5 bg-rose-50 border border-rose-200 text-rose-700 p-3.5 rounded-xl text-xs flex items-start gap-2.5">
               <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
@@ -188,9 +181,9 @@ export default function LoginPage() {
               onClick={handleGoogleLogin}
               disabled={loading}
               type="button"
-              className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl border border-[#9DBEBB]/60 bg-white hover:bg-[#F4E9CD]/30 text-[#031926] font-semibold text-sm shadow-xs hover:shadow transition disabled:opacity-60 cursor-pointer"
+              className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-2xl border border-[#9DBEBB]/50 bg-white hover:bg-[#FBF8F1] text-[#031926] font-semibold text-xs sm:text-sm shadow-xs transition duration-150 disabled:opacity-60 cursor-pointer"
             >
-              <svg className="w-5 h-5" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
                 <path
                   fill="#4285F4"
                   d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v4.51h6.6c-.29 1.52-1.14 2.82-2.4 3.68v3.05h3.88c2.27-2.09 3.66-5.17 3.66-9.17z"
@@ -216,9 +209,9 @@ export default function LoginPage() {
             <div className="absolute inset-0 flex items-center">
               <div className="w-full border-t border-[#9DBEBB]/30" />
             </div>
-            <div className="relative flex justify-center text-xs uppercase">
+            <div className="relative flex justify-center text-[11px]">
               <span className="bg-white px-3 text-[#031926]/50 font-medium">
-                O ingresa con tu correo
+                o mediante correo electrónico
               </span>
             </div>
           </div>
@@ -227,7 +220,7 @@ export default function LoginPage() {
           <form onSubmit={handleEmailAuth} className="space-y-4">
             {isSignUp && (
               <div>
-                <label className="block text-xs font-semibold text-[#031926] mb-1">
+                <label className="block text-xs font-semibold text-[#031926] mb-1.5">
                   Nombre completo
                 </label>
                 <div className="relative">
@@ -237,14 +230,14 @@ export default function LoginPage() {
                     value={nombre}
                     onChange={(e) => setNombre(e.target.value)}
                     placeholder="Tu nombre y apellidos"
-                    className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#9DBEBB]/60 text-sm text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189] focus:border-transparent bg-white"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-[#9DBEBB]/60 text-sm text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]/30 focus:border-[#468189] bg-white transition"
                   />
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-[#031926] mb-1">
+              <label className="block text-xs font-semibold text-[#031926] mb-1.5">
                 Correo electrónico
               </label>
               <div className="relative">
@@ -254,13 +247,13 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="ejemplo@correo.com"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#9DBEBB]/60 text-sm text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189] focus:border-transparent bg-white"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-[#9DBEBB]/60 text-sm text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]/30 focus:border-[#468189] bg-white transition"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-[#031926] mb-1">
+              <label className="block text-xs font-semibold text-[#031926] mb-1.5">
                 Contraseña
               </label>
               <div className="relative">
@@ -270,7 +263,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-[#9DBEBB]/60 text-sm text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189] focus:border-transparent bg-white"
+                  className="w-full pl-10 pr-4 py-2.5 rounded-2xl border border-[#9DBEBB]/60 text-sm text-[#031926] focus:outline-none focus:ring-2 focus:ring-[#468189]/30 focus:border-[#468189] bg-white transition"
                 />
               </div>
             </div>
@@ -278,7 +271,7 @@ export default function LoginPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 px-4 rounded-xl bg-[#468189] hover:bg-[#031926] text-white font-semibold text-sm shadow-md shadow-[#468189]/25 transition disabled:opacity-60 cursor-pointer"
+              className="w-full py-3 px-4 rounded-2xl bg-[#031926] hover:bg-[#468189] text-white font-semibold text-xs sm:text-sm shadow-sm transition disabled:opacity-60 cursor-pointer"
             >
               {loading
                 ? "Procesando..."

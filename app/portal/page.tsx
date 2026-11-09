@@ -8,6 +8,9 @@ import {
   Calendar,
   ClipboardList,
   Smile,
+  Frown,
+  Meh,
+  Sun,
   User,
   LogOut,
   Video,
@@ -527,11 +530,11 @@ function PortalContent() {
   }
 
   const caritas = [
-    { nivel: 1, emoji: "😔", etiqueta: "Muy bajo" },
-    { nivel: 2, emoji: "😐", etiqueta: "Bajo / Cansado" },
-    { nivel: 3, emoji: "🙂", etiqueta: "Tranquilo" },
-    { nivel: 4, emoji: "😊", etiqueta: "Bien" },
-    { nivel: 5, emoji: "🌟", etiqueta: "Excelente" },
+    { nivel: 1, icono: Frown, etiqueta: "Sobrecarga", tono: "text-rose-600 bg-rose-50 border-rose-200" },
+    { nivel: 2, icono: Meh, etiqueta: "Cansancio", tono: "text-amber-600 bg-amber-50 border-amber-200" },
+    { nivel: 3, icono: Smile, etiqueta: "Serenidad", tono: "text-[#468189] bg-[#468189]/10 border-[#468189]/30" },
+    { nivel: 4, icono: Sparkles, etiqueta: "Claridad", tono: "text-[#77ACA2] bg-[#77ACA2]/15 border-[#77ACA2]/40" },
+    { nivel: 5, icono: Sun, etiqueta: "Plenitud", tono: "text-emerald-700 bg-emerald-50 border-emerald-200" },
   ];
 
   return (
@@ -967,26 +970,32 @@ function PortalContent() {
                     Nivel de bienestar
                   </label>
                   <div className="grid grid-cols-5 gap-1.5">
-                    {caritas.map((c) => (
-                      <button
-                        key={c.nivel}
-                        type="button"
-                        onClick={() => {
-                          setNuevoAnimo(c.nivel);
-                          setNuevaEmocion(c.etiqueta);
-                        }}
-                        className={`p-2.5 rounded-xl border text-center transition cursor-pointer ${
-                          nuevoAnimo === c.nivel
-                            ? "bg-[#9DBEBB]/25 border-[#468189] ring-2 ring-[#468189]"
-                            : "border-[#9DBEBB]/40 hover:bg-[#FBF8F1]"
-                        }`}
-                      >
-                        <span className="text-2xl block">{c.emoji}</span>
-                        <span className="text-[9px] font-semibold text-[#031926]/70 block mt-1 truncate">
-                          {c.etiqueta}
-                        </span>
-                      </button>
-                    ))}
+                    {caritas.map((c) => {
+                      const Icon = c.icono;
+                      const seleccionado = nuevoAnimo === c.nivel;
+                      return (
+                        <button
+                          key={c.nivel}
+                          type="button"
+                          onClick={() => {
+                            setNuevoAnimo(c.nivel);
+                            setNuevaEmocion(c.etiqueta);
+                          }}
+                          className={`p-2.5 rounded-2xl border text-center transition cursor-pointer flex flex-col items-center justify-center ${
+                            seleccionado
+                              ? "bg-[#031926] text-white border-[#031926] shadow-xs"
+                              : "bg-white border-[#9DBEBB]/40 hover:bg-[#FBF8F1] text-[#031926]"
+                          }`}
+                        >
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center mb-1 ${seleccionado ? "text-[#77ACA2]" : "text-[#468189]"}`}>
+                            <Icon className="w-5 h-5" />
+                          </div>
+                          <span className={`text-[10px] font-semibold block truncate ${seleccionado ? "text-white" : "text-[#031926]/75"}`}>
+                            {c.etiqueta}
+                          </span>
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -1035,9 +1044,14 @@ function PortalContent() {
                       key={reg.id}
                       className="bg-white p-4 rounded-2xl border border-[#9DBEBB]/40 flex items-start gap-4 shadow-xs"
                     >
-                      <div className="w-12 h-12 rounded-xl bg-[#FBF8F1] border border-[#9DBEBB]/30 flex items-center justify-center text-2xl shrink-0">
-                        {carita.emoji}
-                      </div>
+                      {(() => {
+                        const Icon = carita.icono;
+                        return (
+                          <div className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${carita.tono}`}>
+                            <Icon className="w-5 h-5" />
+                          </div>
+                        );
+                      })()}
                       <div className="flex-1">
                         <div className="flex items-center justify-between">
                           <span className="text-xs font-bold text-[#031926]">
@@ -1114,13 +1128,10 @@ function PortalContent() {
               />
             </div>
             <div className="min-w-0">
-              <span className="text-[10px] font-bold uppercase tracking-wider text-[#468189] block">
-                Tu Especialista
-              </span>
               <h4 className="text-sm font-bold text-[#031926] truncate">
                 {psicologos[0]?.nombre_completo || "Dra. Alyson López Sánchez"}
               </h4>
-              <p className="text-[11px] text-[#031926]/60 truncate">
+              <p className="text-[11px] text-[#468189] font-medium truncate">
                 {psicologos[0]?.especialidad || "Psicóloga Clínica y Terapéutica"}
               </p>
             </div>
@@ -1162,9 +1173,15 @@ function PortalContent() {
           {registrosEmocionales.length > 0 ? (
             <div className="p-3.5 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/30">
               <div className="flex items-center gap-2.5 mb-1">
-                <span className="text-xl">
-                  {caritas.find((c) => c.nivel === registrosEmocionales[0].nivel_animo)?.emoji || "🌱"}
-                </span>
+                {(() => {
+                  const c = caritas.find((it) => it.nivel === registrosEmocionales[0].nivel_animo) || caritas[2];
+                  const Icon = c.icono;
+                  return (
+                    <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 border ${c.tono}`}>
+                      <Icon className="w-4 h-4" />
+                    </div>
+                  );
+                })()}
                 <div>
                   <span className="text-xs font-bold text-[#031926] block leading-tight">
                     {registrosEmocionales[0].emocion_principal || "Reflexión reciente"}
@@ -1220,13 +1237,10 @@ function PortalContent() {
           <div className="bg-white w-full max-w-2xl rounded-3xl p-6 sm:p-8 shadow-2xl border border-[#9DBEBB]/40 my-8">
             <div className="flex items-start justify-between pb-4 border-b border-[#9DBEBB]/30 mb-6">
               <div>
-                <span className="inline-block px-3 py-1 bg-[#9DBEBB]/25 text-[#468189] text-[11px] font-extrabold uppercase tracking-wider rounded-full mb-1">
-                  Reserva en Tiempo Real
-                </span>
-                <h3 className="text-xl font-black text-[#031926]">
+                <h3 className="text-xl font-extrabold text-[#031926]">
                   Agendar Sesión de Consulta
                 </h3>
-                <p className="text-xs text-[#031926]/70 mt-0.5">
+                <p className="text-xs text-[#031926]/70 mt-1">
                   Selecciona a tu profesional, el día en el calendario y el horario disponible que mejor se ajuste a tu tiempo.
                 </p>
               </div>
