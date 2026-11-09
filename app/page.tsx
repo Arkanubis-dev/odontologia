@@ -57,55 +57,13 @@ export default function Home() {
   const [menuLateralAbierto, setMenuLateralAbierto] = useState<boolean>(false);
 
   const enlacesNavegacion = [
-    {
-      numero: "01",
-      href: "#hero",
-      etiqueta: "Inicio",
-      detalle: "Equilibrio y calma",
-      icono: Sparkles,
-    },
-    {
-      numero: "02",
-      href: "#motivos",
-      etiqueta: "Áreas Clínicas",
-      detalle: "Burnout, estrés y límites",
-      icono: Briefcase,
-    },
-    {
-      numero: "03",
-      href: "#sobre-mi",
-      etiqueta: "Sobre Alejandra",
-      detalle: "Filosofía y trayectoria",
-      icono: UserCheck,
-    },
-    {
-      numero: "04",
-      href: "#como-trabajo",
-      etiqueta: "Metodología",
-      detalle: "Cómo es el proceso",
-      icono: Compass,
-    },
-    {
-      numero: "05",
-      href: "#test",
-      etiqueta: "Autoevaluación",
-      detalle: "Test de bienestar",
-      icono: HeartHandshake,
-    },
-    {
-      numero: "06",
-      href: "#opiniones",
-      etiqueta: "Experiencias",
-      detalle: "Reseñas verificadas",
-      icono: Star,
-    },
-    {
-      numero: "07",
-      href: "#faqs",
-      etiqueta: "Preguntas Clave",
-      detalle: "Dudas sobre la consulta",
-      icono: HelpCircle,
-    },
+    { href: "#hero", etiqueta: "Inicio" },
+    { href: "#motivos", etiqueta: "Áreas Clínicas" },
+    { href: "#sobre-mi", etiqueta: "Sobre Alejandra" },
+    { href: "#como-trabajo", etiqueta: "Metodología" },
+    { href: "#test", etiqueta: "Autoevaluación" },
+    { href: "#opiniones", etiqueta: "Opiniones Verificadas" },
+    { href: "#faqs", etiqueta: "Preguntas Frecuentes" },
   ];
 
   // Estados del Mini-Test interactivo
@@ -240,26 +198,26 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-[#FBF8F1] text-[#031926] flex flex-col font-sans selection:bg-[#9DBEBB]/40 selection:text-[#031926]">
-      {/* 1. Barra Lateral Fija a la Izquierda en Midnight Navy (#031926) con delimitador Slate Teal (#468189) */}
+      {/* 1. Barra Lateral Fija a la Izquierda en Midnight Navy (#031926) angosta con cinta Slate Teal (#468189) */}
       <aside
-        className={`fixed top-0 left-0 bottom-0 w-72 xl:w-80 bg-[#031926] text-white border-r-4 border-r-[#468189] shadow-2xl z-40 flex flex-col justify-between transition-transform duration-300 ease-out ${
+        className={`fixed top-0 left-0 bottom-0 w-56 bg-[#031926] text-white border-r-4 border-r-[#468189] shadow-2xl z-40 flex flex-col justify-between transition-transform duration-300 ease-out ${
           menuLateralAbierto ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         <div className="flex flex-col h-full overflow-hidden">
           {/* Logo de la empresa en la parte superior de la barra lateral */}
-          <div className="p-6 pb-5 border-b border-[#468189]/30 bg-[#031926] shrink-0">
+          <div className="p-4 pb-3.5 border-b border-[#468189]/30 bg-[#031926] shrink-0">
             <div className="flex items-center justify-between">
-              <Link href="/" className="flex items-center gap-3 group">
-                <div className="w-11 h-11 rounded-2xl bg-[#468189]/30 border border-[#77ACA2]/40 flex items-center justify-center text-[#77ACA2] shadow-xs group-hover:bg-[#468189] group-hover:text-white transition shrink-0">
-                  <Brain className="w-6 h-6" />
+              <Link href="/" className="flex items-center gap-2.5 group min-w-0">
+                <div className="w-8 h-8 rounded-xl bg-[#468189]/30 border border-[#77ACA2]/40 flex items-center justify-center text-[#77ACA2] shadow-xs group-hover:bg-[#468189] group-hover:text-white transition shrink-0">
+                  <Brain className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <h2 className="text-base font-bold text-white tracking-tight leading-tight">
+                  <h2 className="text-sm font-bold text-white tracking-tight leading-tight truncate">
                     Alejandra Bedoya
                   </h2>
-                  <p className="text-[11px] text-[#9DBEBB] font-medium mt-0.5 truncate">
-                    Psicología Laboral & Terapéutica
+                  <p className="text-[10px] text-[#9DBEBB] font-medium truncate">
+                    Psicología Terapéutica
                   </p>
                 </div>
               </Link>
@@ -268,68 +226,27 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() => setMenuLateralAbierto(false)}
-                className="lg:hidden p-1.5 rounded-lg text-slate-400 hover:text-white transition cursor-pointer"
+                className="lg:hidden p-1 rounded-lg text-slate-400 hover:text-white transition cursor-pointer shrink-0"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
             </div>
           </div>
 
-          {/* Menú de navegación editorial con numeración e iconografía no genérica */}
-          <div className="p-5 flex-1 overflow-y-auto space-y-1">
-            <div className="mb-3 px-2">
-              <span className="text-[10px] font-bold text-[#77ACA2] tracking-wider uppercase block">
-                Navegación Clínica
-              </span>
-            </div>
-
-            <nav className="space-y-1">
-              {enlacesNavegacion.map((item) => {
-                const Icon = item.icono;
-                return (
-                  <a
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMenuLateralAbierto(false)}
-                    className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-left transition group border border-transparent hover:border-[#77ACA2]/30 hover:bg-white/5"
-                  >
-                    <span className="font-mono text-[10px] font-bold text-[#77ACA2] w-5 shrink-0">
-                      {item.numero}
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <span className="text-xs font-semibold text-[#FBF8F1] group-hover:text-white block leading-snug">
-                        {item.etiqueta}
-                      </span>
-                      <span className="text-[10px] text-[#9DBEBB]/70 block truncate">
-                        {item.detalle}
-                      </span>
-                    </div>
-                    <Icon className="w-3.5 h-3.5 text-[#77ACA2]/60 group-hover:text-[#77ACA2] transition shrink-0" />
-                  </a>
-                );
-              })}
+          {/* Menú de navegación: solo las letras (sin números ni iconos) */}
+          <div className="p-3.5 flex-1 overflow-y-auto space-y-1 pb-24">
+            <nav className="space-y-0.5">
+              {enlacesNavegacion.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMenuLateralAbierto(false)}
+                  className="block px-3 py-2 rounded-xl text-xs sm:text-[13px] font-medium text-[#FBF8F1]/80 hover:text-white hover:bg-white/10 transition-colors"
+                >
+                  {item.etiqueta}
+                </a>
+              ))}
             </nav>
-          </div>
-
-          {/* Bloque Inferior con Botón Oficial de WhatsApp (3209622624) y Garantía */}
-          <div className="p-5 border-t border-[#468189]/30 bg-[#02131D] shrink-0 space-y-2.5">
-            <a
-              href="https://wa.me/573209622624?text=Hola%20Alejandra%2C%20quisiera%20agendar%20una%20consulta%20psicol%C3%B3gica"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full inline-flex items-center justify-center gap-2.5 py-3 px-4 rounded-xl bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs shadow-md transition duration-200 cursor-pointer"
-            >
-              <WhatsAppIcon className="w-4 h-4 fill-current shrink-0" />
-              <span>WhatsApp: 320 962 2624</span>
-            </a>
-
-            <div className="flex items-center justify-between text-[11px] text-[#9DBEBB] px-1 pt-1">
-              <span className="flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-[#77ACA2]" />
-                <span>Atención 100% privada</span>
-              </span>
-              <span className="text-[10px] text-[#F4E9CD]">Bogotá & Virtual</span>
-            </div>
           </div>
         </div>
       </aside>
@@ -343,7 +260,7 @@ export default function Home() {
       )}
 
       {/* 2. Header Superior (Con Portal Pacientes a la derecha) */}
-      <header className="border-b border-[#9DBEBB]/30 bg-[#FBF8F1]/95 backdrop-blur-md sticky top-0 z-20 lg:pl-72 xl:pl-80">
+      <header className="border-b border-[#9DBEBB]/30 bg-[#FBF8F1]/95 backdrop-blur-md sticky top-0 z-20 lg:pl-56">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           {/* En desktop: Indicador de Consulta disponible. En móvil: Logo de Alejandra */}
           <div className="flex items-center gap-3">
@@ -390,7 +307,7 @@ export default function Home() {
       </header>
 
       {/* 3. Contenedor de Información de la Página (Delimitado respecto a la Barra Lateral Izquierda) */}
-      <main className="flex-1 min-w-0 lg:pl-72 xl:pl-80">
+      <main className="flex-1 min-w-0 lg:pl-56">
         {/* 2. Hero Section: Editorial, Calma, Impeccable Craft (Cero AI Slop) */}
         <section id="hero" className="relative overflow-hidden py-16 sm:py-24 bg-gradient-to-b from-[#F4E9CD]/30 via-[#FBF8F1] to-[#FBF8F1] border-b border-[#9DBEBB]/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -918,16 +835,16 @@ export default function Home() {
       </footer>
       </main>
 
-      {/* Botón Flotante Permanente de WhatsApp (3209622624) */}
+      {/* Botón Flotante de WhatsApp - Solo en la parte inferior izquierda en bolita con el logo */}
       <a
         href="https://wa.me/573209622624?text=Hola%20Alejandra%2C%20quisiera%20agendar%20una%20consulta%20psicol%C3%B3gica"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 right-6 z-40 flex items-center gap-2.5 px-4 py-3 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white font-bold text-xs sm:text-sm shadow-2xl hover:scale-105 active:scale-95 transition-all duration-200 border-2 border-white cursor-pointer group"
+        className="fixed bottom-6 left-6 z-50 w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-200 border-2 border-white cursor-pointer group"
         title="Escribir por WhatsApp a Alejandra Bedoya (3209622624)"
+        aria-label="Contactar por WhatsApp al 3209622624"
       >
-        <WhatsAppIcon className="w-5 h-5 fill-current shrink-0 group-hover:rotate-12 transition-transform duration-300" />
-        <span className="font-semibold">WhatsApp (320 962 2624)</span>
+        <WhatsAppIcon className="w-7 h-7 fill-white shrink-0 group-hover:rotate-12 transition-transform duration-300" />
       </a>
     </div>
   );
