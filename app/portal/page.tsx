@@ -20,7 +20,8 @@ import {
   ShieldCheck,
   Send,
   Star,
-  ExternalLink
+  ExternalLink,
+  MessageSquare
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import CalendarioCitas, { PsicologoInfo } from "@/components/CalendarioCitas";
@@ -561,9 +562,10 @@ function PortalContent() {
               user?.email?.toLowerCase().includes("alejandra")) && (
               <Link
                 href="/admin"
-                className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#468189] text-white text-xs font-bold hover:bg-[#031926] shadow-sm transition"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#031926] text-white text-xs font-semibold hover:bg-[#468189] shadow-xs transition"
               >
-                <span>{user?.email?.toLowerCase() === "brayancamilo2407@gmail.com" ? "👑 Panel Super Admin" : "Panel Profesional"}</span>
+                <ShieldCheck className="w-3.5 h-3.5 text-[#77ACA2]" />
+                <span>{user?.email?.toLowerCase() === "brayancamilo2407@gmail.com" ? "Panel Super Admin" : "Panel Profesional"}</span>
               </Link>
             )}
 
@@ -597,80 +599,99 @@ function PortalContent() {
 
       {/* Main Container */}
       <main className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Welcome Card en Rich Black (#031926) */}
-        <div className="bg-[#031926] rounded-3xl p-6 sm:p-8 text-white shadow-xl shadow-[#031926]/10 mb-8 border border-[#468189]/30">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <span className="inline-block px-3 py-1 bg-[#468189]/40 backdrop-blur-md rounded-full text-xs font-semibold uppercase tracking-wider mb-2 text-[#9DBEBB] border border-[#77ACA2]/30">
-                Portal del Consultante
-              </span>
-              <h2 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
-                Hola, {user?.nombre?.split(" ")[0]} 👋
-              </h2>
-              <p className="text-[#9DBEBB] text-xs sm:text-sm mt-1 max-w-xl">
-                Este es tu espacio privado para gestionar citas, tareas acordadas en sesión y calificaciones con tu especialista.
-              </p>
-            </div>
-            <button
-              onClick={() => setMostrarModalCita(true)}
-              className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#F4E9CD] text-[#031926] font-extrabold text-xs sm:text-sm shadow-md hover:bg-white transition cursor-pointer shrink-0"
-            >
-              <Plus className="w-4 h-4 text-[#468189]" />
-              Solicitar Nueva Cita
-            </button>
+        {/* Encabezado Editorial Humano y Sereno (Impeccable Craft) */}
+        <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-6 pb-6 border-b border-[#9DBEBB]/30">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[#031926] tracking-tight">
+              Bienvenido, {user?.nombre?.split(" ")[0]}
+            </h1>
+            <p className="text-xs sm:text-sm text-[#031926]/70 mt-1.5 max-w-2xl leading-relaxed">
+              Tu portal privado y confidencial para coordinar sesiones clínicas, revisar actividades terapéuticas y registrar tu evolución con tu especialista.
+            </p>
           </div>
-        </div>
-
-        {/* Tab Navigation */}
-        <div className="flex border-b border-[#9DBEBB]/30 mb-6 gap-2 overflow-x-auto pb-1">
           <button
-            onClick={() => setActiveTab("citas")}
-            className={`inline-flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
-              activeTab === "citas"
-                ? "bg-[#468189] text-white shadow-sm"
-                : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/20"
-            }`}
+            onClick={() => setMostrarModalCita(true)}
+            className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-[#031926] hover:bg-[#468189] text-white font-bold text-xs sm:text-sm shadow-md transition cursor-pointer shrink-0"
           >
-            <Calendar className="w-4 h-4" />
-            <span>Mis Citas ({citas.length})</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("tareas")}
-            className={`inline-flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
-              activeTab === "tareas"
-                ? "bg-[#468189] text-white shadow-sm"
-                : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/20"
-            }`}
-          >
-            <ClipboardList className="w-4 h-4" />
-            <span>Tareas Terapéuticas ({tareas.filter((t) => !t.completada).length} pendientes)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("animo")}
-            className={`inline-flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
-              activeTab === "animo"
-                ? "bg-[#468189] text-white shadow-sm"
-                : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/20"
-            }`}
-          >
-            <Smile className="w-4 h-4" />
-            <span>Mi Diario Emocional</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("perfil")}
-            className={`inline-flex items-center gap-2 py-3 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
-              activeTab === "perfil"
-                ? "bg-[#468189] text-white shadow-sm"
-                : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/20"
-            }`}
-          >
-            <User className="w-4 h-4" />
-            <span>Mi Perfil</span>
+            <Plus className="w-4 h-4 text-[#77ACA2]" />
+            <span>Solicitar Nueva Cita</span>
           </button>
         </div>
+
+        {/* Layout en Dos Columnas: elimina el vacío lateral y crea armonía clínica */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          {/* Columna Principal (8 columnas) */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Navegación por pestañas estilizada */}
+            <div className="flex items-center gap-1.5 p-1.5 bg-white/80 border border-[#9DBEBB]/40 rounded-2xl shadow-2xs overflow-x-auto">
+              <button
+                onClick={() => setActiveTab("citas")}
+                className={`inline-flex items-center gap-2 py-2 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
+                  activeTab === "citas"
+                    ? "bg-[#031926] text-white shadow-xs"
+                    : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/15"
+                }`}
+              >
+                <Calendar className="w-3.5 h-3.5" />
+                <span>Mis Citas</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                    activeTab === "citas"
+                      ? "bg-white/20 text-white"
+                      : "bg-[#9DBEBB]/30 text-[#031926]"
+                  }`}
+                >
+                  {citas.length}
+                </span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("tareas")}
+                className={`inline-flex items-center gap-2 py-2 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
+                  activeTab === "tareas"
+                    ? "bg-[#031926] text-white shadow-xs"
+                    : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/15"
+                }`}
+              >
+                <ClipboardList className="w-3.5 h-3.5" />
+                <span>Tareas Terapéuticas</span>
+                {tareas.filter((t) => !t.completada).length > 0 && (
+                  <span
+                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
+                      activeTab === "tareas"
+                        ? "bg-white/20 text-white"
+                        : "bg-[#F4E9CD] text-[#031926]"
+                    }`}
+                  >
+                    {tareas.filter((t) => !t.completada).length}
+                  </span>
+                )}
+              </button>
+
+              <button
+                onClick={() => setActiveTab("animo")}
+                className={`inline-flex items-center gap-2 py-2 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
+                  activeTab === "animo"
+                    ? "bg-[#031926] text-white shadow-xs"
+                    : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/15"
+                }`}
+              >
+                <Smile className="w-3.5 h-3.5" />
+                <span>Diario Emocional</span>
+              </button>
+
+              <button
+                onClick={() => setActiveTab("perfil")}
+                className={`inline-flex items-center gap-2 py-2 px-4 text-xs sm:text-sm font-semibold rounded-xl transition cursor-pointer shrink-0 ${
+                  activeTab === "perfil"
+                    ? "bg-[#031926] text-white shadow-xs"
+                    : "text-[#031926]/70 hover:text-[#031926] hover:bg-[#9DBEBB]/15"
+                }`}
+              >
+                <User className="w-3.5 h-3.5" />
+                <span>Mi Perfil</span>
+              </button>
+            </div>
 
         {/* TAB 1: CITAS */}
         {activeTab === "citas" && (
@@ -691,7 +712,7 @@ function PortalContent() {
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-5">
                 {citas.map((cita) => {
                   const fechaObj = new Date(cita.fecha_hora);
                   const fechaFormateada = fechaObj.toLocaleDateString("es-ES", {
@@ -705,15 +726,17 @@ function PortalContent() {
                     minute: "2-digit",
                   });
 
+                  const esFinalizada = cita.estado === "completada" || cita.estado === "finalizado";
+
                   return (
                     <div
                       key={cita.id}
-                      className="bg-white rounded-2xl p-6 border border-[#9DBEBB]/40 shadow-xs hover:shadow-md transition"
+                      className="bg-white rounded-3xl p-6 sm:p-7 border border-[#9DBEBB]/40 shadow-xs hover:shadow-md transition duration-200"
                     >
-                      <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-start justify-between gap-3 mb-4">
                         <div className="flex items-center gap-2">
                           <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold ${
                               cita.modalidad === "virtual"
                                 ? "bg-[#9DBEBB]/25 text-[#031926] border border-[#77ACA2]/40"
                                 : "bg-[#F4E9CD] text-[#031926] border border-[#77ACA2]/40"
@@ -728,59 +751,56 @@ function PortalContent() {
                           </span>
 
                           <span
-                            className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
+                            className={`px-3 py-1 rounded-full text-xs font-semibold ${
                               cita.estado === "confirmada"
-                                ? "bg-[#77ACA2]/20 text-[#031926] border border-[#77ACA2]/40"
+                                ? "bg-emerald-50 text-emerald-800 border border-emerald-300"
                                 : cita.estado === "pendiente"
-                                ? "bg-[#F4E9CD] text-[#031926] border border-[#9DBEBB]/40"
-                                : "bg-slate-100 text-slate-600"
+                                ? "bg-amber-50 text-amber-800 border border-amber-300"
+                                : "bg-[#9DBEBB]/20 text-[#031926] border border-[#77ACA2]/40"
                             }`}
                           >
-                            {cita.estado.toUpperCase()}
+                            {esFinalizada
+                              ? "Finalizada"
+                              : cita.estado.charAt(0).toUpperCase() + cita.estado.slice(1)}
                           </span>
                         </div>
                       </div>
 
-                      <h4 className="text-base font-bold text-[#031926] capitalize mb-1">
+                      <h4 className="text-base sm:text-lg font-bold text-[#031926] capitalize mb-1">
                         {fechaFormateada}
                       </h4>
-                      <p className="text-xs font-semibold text-[#468189] flex items-center gap-1.5 mb-3">
+                      <p className="text-xs font-semibold text-[#468189] flex items-center gap-1.5 mb-4">
                         <Clock className="w-3.5 h-3.5" />
                         {horaFormateada}
                       </p>
 
-                      {/* Especialista que te atenderá */}
-                      <div className="p-3 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/30 mb-3 space-y-1.5">
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#468189] flex items-center gap-1">
-                          <span>🩺</span> Especialista que te atenderá:
-                        </span>
-                        <div className="flex items-center gap-2.5 pt-0.5">
-                          <div className="w-9 h-9 rounded-xl bg-[#031926] text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden border border-[#77ACA2]/50 shadow-2xs">
-                            {cita.psicologo?.avatar_url ? (
-                              <img src={cita.psicologo.avatar_url} alt="" className="w-full h-full object-cover" />
-                            ) : (cita.psicologo?.email?.toLowerCase().includes("alejandra") || !cita.psicologo) ? (
-                              <img
-                                src="/alejandra-bedoya.jpg"
-                                alt="Alejandra Bedoya"
-                                className="w-full h-full object-cover object-top"
-                              />
-                            ) : (
-                              <span>{(cita.psicologo?.nombre_completo || cita.psicologo?.email || "P").charAt(0).toUpperCase()}</span>
-                            )}
-                          </div>
-                          <div>
-                            <p className="text-xs font-bold text-[#031926]">
-                              {cita.psicologo?.nombre_completo || "Dra. Alyson López Sánchez"}
-                            </p>
-                            <p className="text-[10px] text-[#468189] font-medium">
-                              Especialista en Psicología
-                            </p>
-                          </div>
+                      {/* Fila del Profesional Asignado */}
+                      <div className="p-3.5 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/30 mb-4 flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-[#031926] text-white flex items-center justify-center font-bold text-xs shrink-0 overflow-hidden border border-[#77ACA2]/50 shadow-2xs">
+                          {cita.psicologo?.avatar_url ? (
+                            <img src={cita.psicologo.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (cita.psicologo?.email?.toLowerCase().includes("alejandra") || !cita.psicologo) ? (
+                            <img
+                              src="/alejandra-bedoya.jpg"
+                              alt="Alejandra Bedoya"
+                              className="w-full h-full object-cover object-top"
+                            />
+                          ) : (
+                            <span>{(cita.psicologo?.nombre_completo || cita.psicologo?.email || "P").charAt(0).toUpperCase()}</span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-xs font-bold text-[#031926] truncate">
+                            {cita.psicologo?.nombre_completo || "Dra. Alyson López Sánchez"}
+                          </p>
+                          <p className="text-[11px] text-[#468189] font-medium truncate">
+                            Especialista en Psicología Clínica
+                          </p>
                         </div>
                       </div>
 
                       {cita.notas_paciente && (
-                        <p className="text-xs text-[#031926]/75 bg-[#FBF8F1] p-3 rounded-xl border border-[#9DBEBB]/30 mb-4">
+                        <p className="text-xs text-[#031926]/75 bg-[#FBF8F1] p-3.5 rounded-2xl border border-[#9DBEBB]/30 mb-4 leading-relaxed">
                           {cita.notas_paciente}
                         </p>
                       )}
@@ -791,45 +811,45 @@ function PortalContent() {
                           href={cita.enlace_reunion}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-md shadow-emerald-600/20 transition mb-3"
+                          className="w-full inline-flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-[#031926] hover:bg-[#468189] text-white font-bold text-xs shadow-md shadow-[#031926]/10 transition mb-3 cursor-pointer"
                         >
-                          <Video className="w-4 h-4 text-emerald-100" />
+                          <Video className="w-4 h-4 text-[#77ACA2]" />
                           <span>Unirse a Google Meet</span>
                           <ExternalLink className="w-3.5 h-3.5 opacity-80" />
                         </a>
                       )}
 
                       {/* Calificación: Solo si la especialista finalizó el servicio */}
-                      {(cita.estado === "completada" || cita.estado === "finalizado") ? (
+                      {esFinalizada && (
                         calificaciones[cita.id] ? (
-                          <div className="mt-4 p-3.5 rounded-2xl bg-[#F4E9CD]/50 border border-[#9DBEBB]/40 flex flex-col gap-1.5">
+                          <div className="mt-4 p-4 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/40 flex flex-col gap-2">
                             <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-1 text-amber-500">
+                              <div className="flex items-center gap-1">
                                 {[...Array(calificaciones[cita.id].estrellas)].map((_, i) => (
-                                  <Star key={i} className="w-3.5 h-3.5 fill-amber-400" />
+                                  <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
                                 ))}
-                                <span className="text-xs font-bold text-[#031926] ml-1">
-                                  Calificación registrada
+                                <span className="text-xs font-bold text-[#031926] ml-1.5">
+                                  Sesión Calificada
                                 </span>
                               </div>
-                              <span className="text-[10px] text-[#031926]/70 font-semibold uppercase bg-white/70 px-2 py-0.5 rounded-full border border-[#9DBEBB]/30">
-                                1 por servicio
+                              <span className="text-[10px] text-[#468189] font-bold uppercase bg-[#77ACA2]/15 px-2.5 py-0.5 rounded-full border border-[#77ACA2]/30">
+                                Registrado
                               </span>
                             </div>
                             {calificaciones[cita.id].comentario && (
-                              <p className="text-xs text-[#031926]/80 italic mt-0.5">
+                              <p className="text-xs text-[#031926]/80 italic mt-0.5 leading-relaxed">
                                 "{calificaciones[cita.id].comentario}"
                               </p>
                             )}
                           </div>
                         ) : (
-                          <div className="mt-4 p-3.5 rounded-2xl bg-[#77ACA2]/15 border border-[#77ACA2]/40 flex items-center justify-between gap-3">
+                          <div className="mt-4 p-4 rounded-2xl bg-[#F4E9CD]/40 border border-[#9DBEBB]/40 flex items-center justify-between gap-3">
                             <div>
                               <p className="text-xs font-bold text-[#031926]">
                                 Sesión Finalizada
                               </p>
                               <p className="text-[11px] text-[#031926]/75">
-                                Califica el servicio prestado (1 a 5 estrellas)
+                                Comparte cómo te sentiste en esta sesión
                               </p>
                             </div>
                             <button
@@ -838,16 +858,18 @@ function PortalContent() {
                                 setEstrellasCalificar(5);
                                 setComentarioCalificar("");
                               }}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#468189] hover:bg-[#031926] text-white font-semibold text-xs shadow-xs transition cursor-pointer shrink-0"
+                              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#031926] hover:bg-[#468189] text-white font-bold text-xs shadow-xs transition cursor-pointer shrink-0"
                             >
                               <Star className="w-3.5 h-3.5 fill-amber-300 text-amber-300" />
                               <span>Calificar</span>
                             </button>
                           </div>
                         )
-                      ) : (
-                        <p className="text-[10px] text-[#031926]/50 mt-3 italic flex items-center gap-1">
-                          <span>* Podrás calificar esta sesión una vez la psicóloga marque el servicio como finalizado.</span>
+                      )}
+
+                      {!esFinalizada && (
+                        <p className="text-[10px] text-[#031926]/50 mt-3 italic">
+                          * Podrás calificar esta sesión una vez la psicóloga marque el servicio como finalizado.
                         </p>
                       )}
                     </div>
@@ -1077,7 +1099,120 @@ function PortalContent() {
             </div>
           </div>
         )}
-      </main>
+      </div>
+
+      {/* Columna Lateral de Acompañamiento Terapéutico (4 columnas en desktop) */}
+      <div className="lg:col-span-4 space-y-6">
+        {/* 1. Tarjeta Especialista Asignada */}
+        <div className="bg-white rounded-3xl p-6 border border-[#9DBEBB]/40 shadow-xs">
+          <div className="flex items-center gap-3.5 mb-4">
+            <div className="w-12 h-12 rounded-2xl bg-[#031926] overflow-hidden border border-[#77ACA2]/40 shrink-0 shadow-xs">
+              <img
+                src={psicologos[0]?.avatar_url || "/alejandra-bedoya.jpg"}
+                alt={psicologos[0]?.nombre_completo || "Especialista"}
+                className="w-full h-full object-cover object-top"
+              />
+            </div>
+            <div className="min-w-0">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#468189] block">
+                Tu Especialista
+              </span>
+              <h4 className="text-sm font-bold text-[#031926] truncate">
+                {psicologos[0]?.nombre_completo || "Dra. Alyson López Sánchez"}
+              </h4>
+              <p className="text-[11px] text-[#031926]/60 truncate">
+                {psicologos[0]?.especialidad || "Psicóloga Clínica y Terapéutica"}
+              </p>
+            </div>
+          </div>
+
+          <p className="text-xs text-[#031926]/70 leading-relaxed mb-4">
+            Acompañamiento profesional y seguimiento de tus objetivos terapéuticos en cada sesión.
+          </p>
+
+          <button
+            type="button"
+            onClick={() => {
+              const chatBtn = document.querySelector('button[title*="Chatear con"]') as HTMLButtonElement;
+              if (chatBtn) chatBtn.click();
+            }}
+            className="w-full py-2.5 px-3 rounded-xl bg-[#FBF8F1] hover:bg-[#F4E9CD] border border-[#9DBEBB]/50 text-[#031926] font-bold text-xs flex items-center justify-center gap-2 transition cursor-pointer"
+          >
+            <MessageSquare className="w-4 h-4 text-[#468189]" />
+            <span>Enviar Mensaje Directo</span>
+          </button>
+        </div>
+
+        {/* 2. Resumen Rápido del Diario Emocional */}
+        <div className="bg-white rounded-3xl p-6 border border-[#9DBEBB]/40 shadow-xs">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-bold text-[#031926] flex items-center gap-1.5">
+              <Smile className="w-4 h-4 text-[#468189]" />
+              <span>Tu Bienestar Emocional</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => setActiveTab("animo")}
+              className="text-[11px] font-semibold text-[#468189] hover:text-[#031926] transition cursor-pointer"
+            >
+              Ver histórico
+            </button>
+          </div>
+
+          {registrosEmocionales.length > 0 ? (
+            <div className="p-3.5 rounded-2xl bg-[#FBF8F1] border border-[#9DBEBB]/30">
+              <div className="flex items-center gap-2.5 mb-1">
+                <span className="text-xl">
+                  {caritas.find((c) => c.nivel === registrosEmocionales[0].nivel_animo)?.emoji || "🌱"}
+                </span>
+                <div>
+                  <span className="text-xs font-bold text-[#031926] block leading-tight">
+                    {registrosEmocionales[0].emocion_principal || "Reflexión reciente"}
+                  </span>
+                  <span className="text-[10px] text-gray-400">
+                    {new Date(registrosEmocionales[0].creado_en).toLocaleDateString("es-ES", {
+                      weekday: "short",
+                      day: "numeric",
+                      month: "short",
+                    })}
+                  </span>
+                </div>
+              </div>
+              {registrosEmocionales[0].notas && (
+                <p className="text-[11px] text-[#031926]/75 italic mt-2 line-clamp-2 leading-relaxed">
+                  "{registrosEmocionales[0].notas}"
+                </p>
+              )}
+            </div>
+          ) : (
+            <p className="text-xs text-[#031926]/70 leading-relaxed mb-3">
+              Aún no has registrado tu emoción de hoy. Registrarla ayuda a tu especialista a comprender tu evolución.
+            </p>
+          )}
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("animo")}
+            className="w-full mt-3 py-2 px-3 rounded-xl bg-[#468189] hover:bg-[#031926] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>Registrar Estado de Ánimo</span>
+          </button>
+        </div>
+
+        {/* 3. Garantía Ética y Confidencialidad */}
+        <div className="rounded-2xl p-4 bg-[#9DBEBB]/15 border border-[#77ACA2]/30 flex items-start gap-3">
+          <ShieldCheck className="w-5 h-5 text-[#468189] shrink-0 mt-0.5" />
+          <div>
+            <h5 className="font-bold text-[#031926] text-xs">Espacio Privado y Seguro</h5>
+            <p className="text-[11px] text-[#031926]/70 mt-0.5 leading-relaxed">
+              Tus notas, citas y reflexiones están resguardadas bajo estricto secreto profesional ético.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
 
       {/* Modal: Solicitar Cita con Calendario */}
       {mostrarModalCita && (
