@@ -89,6 +89,9 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // Evitar almacenamiento en caché para portal y panel de administración
+  response.headers.set("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+
   return response;
 }
 
