@@ -840,7 +840,7 @@ export default function Home() {
         href="https://wa.me/573209622624?text=Hola%20Alejandra%2C%20quisiera%20agendar%20una%20consulta%20psicol%C3%B3gica"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed bottom-6 left-6 z-50 w-13 h-13 sm:w-14 sm:h-14 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-200 border-2 border-white cursor-pointer group"
+        className="fixed bottom-6 left-6 z-50 w-14 h-14 rounded-full bg-[#25D366] hover:bg-[#20ba5a] text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-200 border-2 border-white cursor-pointer group"
         title="Escribir por WhatsApp a Alejandra Bedoya (3209622624)"
         aria-label="Contactar por WhatsApp al 3209622624"
       >
