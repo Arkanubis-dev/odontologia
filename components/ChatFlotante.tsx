@@ -447,7 +447,7 @@ export default function ChatFlotante({
 
             {/* Contador de no leídos */}
             {noLeidos > 0 && (
-              <span className="absolute -top-1 -right-1 bg-rose-500 text-white font-extrabold text-[10px] w-5 h-5 rounded-full flex items-center justify-center shadow-md animate-bounce border-2 border-white">
+              <span className="absolute -top-1 -right-1 bg-rose-500 text-white font-extrabold text-[10px] w-5 h-5 rounded-full flex items-center justify-center shadow-md border-2 border-white scale-100 transition-transform">
                 {noLeidos}
               </span>
             )}

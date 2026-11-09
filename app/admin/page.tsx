@@ -2496,9 +2496,9 @@ function AdminContent() {
                       <button
                         key={c.id}
                         onClick={() => setPacienteChatSeleccionado(c)}
-                        className={`w-full text-left p-3.5 flex items-center gap-3 transition cursor-pointer ${
+                        className={`w-full text-left p-3.5 flex items-center gap-3 transition cursor-pointer rounded-2xl mx-1 my-0.5 ${
                           seleccionado
-                            ? "bg-[#468189]/15 border-l-4 border-[#468189]"
+                            ? "bg-[#468189]/15 shadow-xs ring-1 ring-[#468189]/30 font-semibold"
                             : "hover:bg-white/60"
                         }`}
                       >
@@ -2507,7 +2507,7 @@ function AdminContent() {
                             {(c.nombre_completo || c.email || "U").charAt(0).toUpperCase()}
                           </div>
                           {conv.no_leidos > 0 && (
-                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white font-extrabold text-[9px] flex items-center justify-center shadow-xs animate-bounce">
+                            <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white font-extrabold text-[9px] flex items-center justify-center shadow-xs">
                               {conv.no_leidos}
                             </span>
                           )}
@@ -2551,9 +2551,9 @@ function AdminContent() {
                       <button
                         key={p.id}
                         onClick={() => setPacienteChatSeleccionado(p)}
-                        className={`w-full text-left p-3.5 flex items-center gap-3 transition cursor-pointer ${
+                        className={`w-full text-left p-3.5 flex items-center gap-3 transition cursor-pointer rounded-2xl mx-1 my-0.5 ${
                           seleccionado
-                            ? "bg-[#468189]/15 border-l-4 border-[#468189]"
+                            ? "bg-[#468189]/15 shadow-xs ring-1 ring-[#468189]/30 font-semibold"
                             : "hover:bg-white/60 opacity-80"
                         }`}
                       >
