@@ -229,10 +229,10 @@ export default function Home() {
         </div>
       </header>
 
-      {/* 2. Barra Lateral Fija a la Derecha Delimitada por Barra de Color (Impeccable Sidebar) */}
+      {/* 2. Barra Lateral Fija a la Izquierda Delimitada por Barra de Color (Impeccable Sidebar) */}
       <aside
-        className={`fixed top-20 right-0 bottom-0 w-72 xl:w-80 bg-white border-l-4 border-l-[#468189] shadow-xl z-30 flex flex-col justify-between transition-transform duration-300 ease-out ${
-          menuLateralAbierto ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+        className={`fixed top-20 left-0 bottom-0 w-72 xl:w-80 bg-white border-r-4 border-r-[#468189] shadow-xl z-30 flex flex-col justify-between transition-transform duration-300 ease-out ${
+          menuLateralAbierto ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
         <div className="p-6 overflow-y-auto">
@@ -306,8 +306,8 @@ export default function Home() {
         />
       )}
 
-      {/* 3. Contenedor de Información de la Página (Delimitado respecto a la Barra Lateral) */}
-      <main className="flex-1 min-w-0 lg:pr-72 xl:pr-80">
+      {/* 3. Contenedor de Información de la Página (Delimitado respecto a la Barra Lateral Izquierda) */}
+      <main className="flex-1 min-w-0 lg:pl-72 xl:pl-80">
         {/* 2. Hero Section: Editorial, Calma, Impeccable Craft (Cero AI Slop) */}
         <section id="hero" className="relative overflow-hidden py-16 sm:py-24 bg-gradient-to-b from-[#F4E9CD]/30 via-[#FBF8F1] to-[#FBF8F1] border-b border-[#9DBEBB]/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
