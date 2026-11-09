@@ -18,7 +18,11 @@ import {
   ChevronDown,
   Award,
   Smile,
-  Compass
+  Compass,
+  Menu,
+  X,
+  UserCheck,
+  HelpCircle
 } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -41,6 +45,17 @@ export default function Home() {
 
   const [motivoSeleccionado, setMotivoSeleccionado] = useState<string>("burnout");
   const [faqAbierta, setFaqAbierta] = useState<number | null>(0);
+  const [menuLateralAbierto, setMenuLateralAbierto] = useState<boolean>(false);
+
+  const enlacesNavegacion = [
+    { href: "#hero", etiqueta: "Inicio", icono: Sparkles },
+    { href: "#motivos", etiqueta: "Áreas de Acompañamiento", icono: Briefcase },
+    { href: "#sobre-mi", etiqueta: "Sobre Mí", icono: UserCheck },
+    { href: "#como-trabajo", etiqueta: "Metodología", icono: Clock },
+    { href: "#test", etiqueta: "Autoevaluación", icono: HeartHandshake },
+    { href: "#opiniones", etiqueta: "Opiniones Verificadas", icono: Star },
+    { href: "#faqs", etiqueta: "Preguntas Frecuentes", icono: HelpCircle },
+  ];
 
   // Estados del Mini-Test interactivo
   const [pasoTest, setPasoTest] = useState<number>(0);
@@ -191,24 +206,7 @@ export default function Home() {
             </div>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8 text-xs font-semibold text-[#031926]/75">
-            <a href="#sobre-mi" className="hover:text-[#468189] transition">
-              Sobre Mí
-            </a>
-            <a href="#motivos" className="hover:text-[#468189] transition">
-              Áreas de Consulta
-            </a>
-            <a href="#como-trabajo" className="hover:text-[#468189] transition">
-              Metodología
-            </a>
-            <a href="#test" className="hover:text-[#468189] transition">
-              Autoevaluación
-            </a>
-            <a href="#opiniones" className="hover:text-[#468189] transition">
-              Opiniones
-            </a>
-          </nav>
-
+          {/* El botón de Portal Pacientes se queda exactamente donde está (a la derecha) */}
           <div className="flex items-center gap-3">
             <Link
               href="/login"
@@ -217,12 +215,101 @@ export default function Home() {
               <CalendarCheck className="w-4 h-4 text-[#77ACA2]" />
               <span>Portal Pacientes</span>
             </Link>
+
+            {/* Toggle para móvil de la barra lateral de opciones */}
+            <button
+              type="button"
+              onClick={() => setMenuLateralAbierto(!menuLateralAbierto)}
+              className="lg:hidden p-2.5 rounded-2xl bg-white border border-[#9DBEBB]/50 text-[#031926] hover:bg-[#F4E9CD]/30 transition cursor-pointer"
+              aria-label="Abrir opciones de navegación"
+            >
+              {menuLateralAbierto ? <X className="w-5 h-5 text-[#468189]" /> : <Menu className="w-5 h-5 text-[#468189]" />}
+            </button>
           </div>
         </div>
       </header>
 
-      {/* 2. Hero Section: Editorial, Calma, Impeccable Craft (Cero AI Slop) */}
-      <section className="relative overflow-hidden py-16 sm:py-24 bg-gradient-to-b from-[#F4E9CD]/30 via-[#FBF8F1] to-[#FBF8F1] border-b border-[#9DBEBB]/30">
+      {/* 2. Barra Lateral Fija a la Derecha Delimitada por Barra de Color (Impeccable Sidebar) */}
+      <aside
+        className={`fixed top-20 right-0 bottom-0 w-72 xl:w-80 bg-white border-l-4 border-l-[#468189] shadow-xl z-30 flex flex-col justify-between transition-transform duration-300 ease-out ${
+          menuLateralAbierto ? "translate-x-0" : "translate-x-full lg:translate-x-0"
+        }`}
+      >
+        <div className="p-6 overflow-y-auto">
+          <div className="pb-4 mb-4 border-b border-[#9DBEBB]/30">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-[#468189] tracking-wider uppercase flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#468189]" />
+                Opciones de Consulta
+              </span>
+              <button
+                type="button"
+                onClick={() => setMenuLateralAbierto(false)}
+                className="lg:hidden p-1 text-slate-400 hover:text-[#031926] transition cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            <p className="text-xs text-[#031926]/70 mt-1 leading-relaxed">
+              Navega rápidamente por las secciones y áreas terapéuticas.
+            </p>
+          </div>
+
+          <nav className="space-y-1">
+            {enlacesNavegacion.map((item) => {
+              const Icon = item.icono;
+              return (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setMenuLateralAbierto(false)}
+                  className="flex items-center gap-3 px-3.5 py-3 rounded-2xl text-xs font-semibold text-[#031926]/80 hover:text-[#031926] hover:bg-[#FBF8F1] border border-transparent hover:border-[#9DBEBB]/40 transition group"
+                >
+                  <div className="w-8 h-8 rounded-xl bg-[#FBF8F1] text-[#468189] group-hover:bg-[#031926] group-hover:text-white flex items-center justify-center transition shadow-2xs shrink-0">
+                    <Icon className="w-4 h-4" />
+                  </div>
+                  <span className="truncate">{item.etiqueta}</span>
+                </a>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Ficha de Garantía y Contacto al Pie de la Barra Lateral */}
+        <div className="p-5 border-t border-[#9DBEBB]/30 bg-[#FBF8F1]/60">
+          <div className="p-4 rounded-2xl bg-[#031926] text-white shadow-sm space-y-2">
+            <div className="flex items-center gap-2">
+              <ShieldCheck className="w-4 h-4 text-[#77ACA2]" />
+              <span className="text-xs font-bold">Atención 1:1 Privada</span>
+            </div>
+            <p className="text-[11px] text-[#9DBEBB] leading-relaxed">
+              Espacio confidencial protegido bajo secreto ético profesional de psicología.
+            </p>
+            <div className="pt-1">
+              <Link
+                href="/login"
+                className="w-full inline-flex items-center justify-center gap-2 py-2 px-3 rounded-xl bg-[#F4E9CD] hover:bg-white text-[#031926] font-bold text-xs transition shadow-xs"
+              >
+                <span>Agendar Consulta</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#468189]" />
+              </Link>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Backdrop para cerrar en móvil */}
+      {menuLateralAbierto && (
+        <div
+          onClick={() => setMenuLateralAbierto(false)}
+          className="fixed inset-0 bg-[#031926]/40 backdrop-blur-2xs z-20 lg:hidden"
+        />
+      )}
+
+      {/* 3. Contenedor de Información de la Página (Delimitado respecto a la Barra Lateral) */}
+      <main className="flex-1 min-w-0 lg:pr-72 xl:pr-80">
+        {/* 2. Hero Section: Editorial, Calma, Impeccable Craft (Cero AI Slop) */}
+        <section id="hero" className="relative overflow-hidden py-16 sm:py-24 bg-gradient-to-b from-[#F4E9CD]/30 via-[#FBF8F1] to-[#FBF8F1] border-b border-[#9DBEBB]/30">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-center">
             {/* Mensaje principal */}
@@ -666,7 +753,7 @@ export default function Home() {
       </section>
 
       {/* 8. Preguntas Frecuentes */}
-      <section className="py-20 sm:py-28 bg-white border-b border-[#9DBEBB]/30">
+      <section id="faqs" className="py-20 sm:py-28 bg-white border-b border-[#9DBEBB]/30">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
           <div className="max-w-2xl mb-14">
             <h2 className="text-2xl sm:text-3xl font-extrabold text-[#031926]">
@@ -746,6 +833,7 @@ export default function Home() {
           </p>
         </div>
       </footer>
+      </main>
     </div>
   );
 }
